@@ -1,0 +1,223 @@
+name: Build and Publish AppJuice Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: UniApp source ref to build
+        required: true
+        default: master
+      release_tag:
+        description: Optional release tag override (defaults to v<source version>)
+        required: false
+        default: ""
+  repository_dispatch:
+    types:
+      - publish-release
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: macos-x64
+            os: macos-15-intel
+            arch: x64
+            asset_name: AppJuice-macOS-x64.dmg
+          - id: macos-arm64
+            os: macos-latest
+            arch: arm64
+            asset_name: AppJuice-macOS-arm64.dmg
+          - id: windows-x64
+            os: windows-latest
+            arch: x64
+            asset_name: AppJuice-Windows-x64.zip
+          - id: linux-x64
+            os: ubuntu-latest
+            arch: x64
+            asset_name: AppJuice-Linux-x64.tar.gz
+          - id: linux-arm64
+            os: ubuntu-24.04-arm
+            arch: arm64
+            asset_name: AppJuice-Linux-arm64.tar.gz
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Resolve source ref
+        id: source
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.source_ref }}" ]; then
+            printf 'ref=%s\n' "${{ inputs.source_ref }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ github.event.client_payload.source_ref }}" ]; then
+            printf 'ref=%s\n' "${{ github.event.client_payload.source_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            printf 'ref=%s\n' "master" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out UniApp source
+        uses: actions/checkout@v4
+        with:
+          repository: herrkaefer/uniapp
+          ref: ${{ steps.source.outputs.ref }}
+          token: ${{ secrets.UNIAPP_REPO_TOKEN }}
+          path: source
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.1
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: source
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace packages
+        working-directory: source
+        run: pnpm build
+
+      - name: Build portable bundle
+        id: bundle
+        shell: bash
+        working-directory: source
+        env:
+          UNIAPP_BUNDLE_OFFLINE: "0"
+        run: |
+          OUTPUT_FILE="$(mktemp)"
+          node scripts/build-bundle.mjs --output-file "$OUTPUT_FILE"
+          BUNDLE_DIR="$(cat "$OUTPUT_FILE")"
+          printf 'bundle_dir=%s\n' "$BUNDLE_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Build prototype installer
+        if: runner.os == 'Windows' || runner.os == 'Linux'
+        id: installer
+        shell: bash
+        working-directory: source
+        run: |
+          OUTPUT_FILE="$(mktemp)"
+          PLATFORM_NAME="$(echo '${{ runner.os }}' | tr '[:upper:]' '[:lower:]')"
+          node scripts/build-prototype-installer.mjs \
+            --platform "$PLATFORM_NAME" \
+            --bundle-root "${{ steps.bundle.outputs.bundle_dir }}" \
+            --output-file "$OUTPUT_FILE"
+          INSTALLER_DIR="$(cat "$OUTPUT_FILE")"
+          printf 'installer_dir=%s\n' "$INSTALLER_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Archive prototype installer (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        working-directory: source
+        run: |
+          INSTALLER_DIR="${{ steps.installer.outputs.installer_dir }}"
+          INSTALLER_NAME="$(basename "$INSTALLER_DIR")"
+          cd "$(dirname "$INSTALLER_DIR")"
+          tar -czf "$INSTALLER_NAME.tar.gz" "$INSTALLER_NAME"
+
+      - name: Archive prototype installer (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        working-directory: source
+        run: |
+          $installerDir = "${{ steps.installer.outputs.installer_dir }}"
+          $installerName = Split-Path $installerDir -Leaf
+          $parentDir = Split-Path $installerDir -Parent
+          Compress-Archive -Path $installerDir -DestinationPath (Join-Path $parentDir "$installerName.zip") -Force
+
+      - name: Build macOS dmg
+        if: runner.os == 'macOS'
+        working-directory: source
+        run: pnpm bundle:macos-dmg
+
+      - name: Stage release asset
+        id: release_asset
+        shell: bash
+        working-directory: source
+        run: |
+          RELEASE_DIR="$RUNNER_TEMP/release-asset"
+          mkdir -p "$RELEASE_DIR"
+          TARGET="$RELEASE_DIR/${{ matrix.asset_name }}"
+
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            cp artifacts/app/UniApp-*.dmg "$TARGET"
+          elif [ "${{ runner.os }}" = "Windows" ]; then
+            cp "${{ steps.installer.outputs.installer_dir }}.zip" "$TARGET"
+          else
+            cp "${{ steps.installer.outputs.installer_dir }}.tar.gz" "$TARGET"
+          fi
+
+          printf 'asset_path=%s\n' "$TARGET" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.id }}
+          path: ${{ steps.release_asset.outputs.asset_path }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve source ref
+        id: source
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.source_ref }}" ]; then
+            printf 'ref=%s\n' "${{ inputs.source_ref }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ github.event.client_payload.source_ref }}" ]; then
+            printf 'ref=%s\n' "${{ github.event.client_payload.source_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            printf 'ref=%s\n' "master" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out UniApp source
+        uses: actions/checkout@v4
+        with:
+          repository: herrkaefer/uniapp
+          ref: ${{ steps.source.outputs.ref }}
+          token: ${{ secrets.UNIAPP_REPO_TOKEN }}
+          path: source
+
+      - name: Resolve release metadata
+        id: release_meta
+        shell: bash
+        run: |
+          VERSION="$(node -p "require('./source/package.json').version")"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.release_tag }}" ]; then
+            TAG="${{ inputs.release_tag }}"
+          elif [ -n "${{ github.event.client_payload.release_tag }}" ]; then
+            TAG="${{ github.event.client_payload.release_tag }}"
+          else
+            TAG="v$VERSION"
+          fi
+          printf 'version=%s\n' "$VERSION" >> "$GITHUB_OUTPUT"
+          printf 'tag=%s\n' "$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Download staged release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: release-assets
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          name: AppJuice ${{ steps.release_meta.outputs.version }}
+          files: release-assets/*
+          make_latest: true
+          generate_release_notes: true
+          overwrite_files: true

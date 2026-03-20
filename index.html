@@ -247,6 +247,81 @@
       margin-bottom: 56px;
     }
 
+    /* ─── Downloads ─── */
+    .downloads-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 36px;
+    }
+    .download-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .download-card:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-strong);
+    }
+    .download-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .download-card-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--fg);
+    }
+    .download-card-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .download-card p {
+      max-width: none;
+      font-size: 0.98rem;
+      margin-bottom: 16px;
+    }
+    .download-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .download-links .btn {
+      padding: 10px 16px;
+      font-size: 0.88rem;
+    }
+    .download-note {
+      font-size: 0.86rem;
+      color: var(--faint);
+    }
+    .download-footer {
+      margin-top: 28px;
+      display: flex;
+      justify-content: center;
+    }
+    @media (max-width: 900px) {
+      .downloads-grid { grid-template-columns: 1fr; }
+    }
+
     /* ─── Screenshot placeholder ─── */
     .screenshot {
       position: relative;
@@ -642,7 +717,7 @@
         <a href="#compare">Compare</a>
         <a href="#usecases">Use Cases</a>
         <a href="#tech">Tech</a>
-        <a href="https://github.com/herrkaefer/appjuice-releases/releases" class="btn btn-primary">Download</a>
+        <a href="#downloads" class="btn btn-primary">Download</a>
       </nav>
     </div>
   </header>
@@ -660,7 +735,7 @@
         From idea to app, from using to sharing — no code required.
       </p>
       <div class="hero-actions reveal reveal-delay-3">
-        <a href="https://github.com/herrkaefer/appjuice-releases/releases" class="btn btn-primary btn-lg">
+        <a href="#downloads" class="btn btn-primary btn-lg">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download for Free
         </a>
@@ -689,6 +764,68 @@
       <p class="oneliner-text reveal">
         AppJuice is your <strong>personal software factory</strong>: describe the tool you want in natural language, AI creates it for you, with <strong>built-in intelligence</strong>, running entirely on <strong>your device</strong>, freely shareable with anyone.
       </p>
+    </div>
+  </section>
+
+  <!-- ─── Downloads ─── -->
+  <section class="section" id="downloads">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-label">Downloads</div>
+        <h2>Get the latest AppJuice build for your platform.</h2>
+        <p>These links point to the newest public release artifacts on GitHub.</p>
+      </div>
+      <div class="downloads-grid">
+        <div class="download-card reveal">
+          <div class="download-card-header">
+            <div class="download-card-title">macOS</div>
+            <div class="download-card-pill">Latest DMG</div>
+          </div>
+          <p>Choose the right Mac build for your chip. Both buttons always point to the newest release.</p>
+          <div class="download-links">
+            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-macOS-arm64.dmg">Apple Silicon</a>
+            <a class="btn btn-outline" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-macOS-x64.dmg">Intel</a>
+          </div>
+          <div class="download-note">Install from the downloaded DMG. In-app update flow will come later.</div>
+        </div>
+        <div class="download-card reveal reveal-delay-1">
+          <div class="download-card-header">
+            <div class="download-card-title">Windows</div>
+            <div class="download-card-pill">Latest ZIP</div>
+          </div>
+          <p>Download the current Windows packaged build for local install-style testing.</p>
+          <div class="download-links">
+            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-Windows-x64.zip">Windows x64</a>
+          </div>
+          <div class="download-note">A native Windows installer is planned next. For now, use the packaged ZIP build.</div>
+        </div>
+        <div class="download-card reveal reveal-delay-2">
+          <div class="download-card-header">
+            <div class="download-card-title">Linux</div>
+            <div class="download-card-pill">Latest TAR.GZ</div>
+          </div>
+          <p>Choose the Linux build that matches your machine architecture.</p>
+          <div class="download-links">
+            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-Linux-x64.tar.gz">Linux x64</a>
+            <a class="btn btn-outline" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-Linux-arm64.tar.gz">Linux ARM64</a>
+          </div>
+          <div class="download-note">More native Linux formats like AppImage are planned after the packaged TAR.GZ flow.</div>
+        </div>
+        <div class="download-card reveal reveal-delay-3">
+          <div class="download-card-header">
+            <div class="download-card-title">Release Notes</div>
+            <div class="download-card-pill">GitHub</div>
+          </div>
+          <p>Open the latest release notes, changelog, and all published artifacts in one place.</p>
+          <div class="download-links">
+            <a class="btn btn-outline" href="https://github.com/herrkaefer/appjuice-releases/releases/latest">Open latest release</a>
+          </div>
+          <div class="download-note">This site can now link directly to the public release repo and its latest platform builds.</div>
+        </div>
+      </div>
+      <div class="download-footer reveal reveal-delay-4">
+        <a href="https://github.com/herrkaefer/appjuice-releases/releases" class="btn btn-outline">Browse all releases</a>
+      </div>
     </div>
   </section>
 
