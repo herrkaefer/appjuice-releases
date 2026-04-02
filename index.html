@@ -324,30 +324,13 @@
 
     .screenshot {
       position: relative;
-      background: var(--card-bg);
       border-radius: var(--radius-lg);
-      border: 1px solid var(--border);
-      aspect-ratio: 16 / 10;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       overflow: hidden;
-      box-shadow: var(--shadow-lg);
     }
     .screenshot img {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      height: auto;
       display: block;
-    }
-    .screenshot::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 50%),
-        repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(0,0,0,0.015) 20px, rgba(0,0,0,0.015) 21px),
-        repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0,0,0,0.015) 20px, rgba(0,0,0,0.015) 21px);
     }
     .screenshot-label {
       position: relative;
@@ -366,35 +349,6 @@
       max-width: 960px;
       margin: 0 auto;
       position: relative;
-    }
-    .window-chrome {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.03);
-    }
-    .window-chrome-bar {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 12px 16px;
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--border);
-    }
-    .window-dot {
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-      background: var(--border-strong);
-    }
-    .window-dot:nth-child(1) { background: #ff5f57; }
-    .window-dot:nth-child(2) { background: #ffbd2e; }
-    .window-dot:nth-child(3) { background: #28c840; }
-    .window-chrome .screenshot {
-      border-radius: 0;
-      border: none;
-      box-shadow: none;
     }
 
     /* ─── One-liner section ─── */
@@ -749,15 +703,8 @@
       <p class="hero-note reveal reveal-delay-3">macOS, Windows &amp; Linux &middot; No account needed &middot; Bring your own AI keys</p>
 
       <div class="hero-screenshot reveal reveal-delay-4">
-        <div class="window-chrome">
-          <div class="window-chrome-bar">
-            <span class="window-dot"></span>
-            <span class="window-dot"></span>
-            <span class="window-dot"></span>
-          </div>
-          <div class="screenshot">
-            <img src="assets/screenshot-main.jpg" alt="App Manager Dashboard — Your apps at a glance">
-          </div>
+        <div class="screenshot">
+          <img src="assets/screenshot-main.jpg" alt="App Manager Dashboard — Your apps at a glance">
         </div>
       </div>
     </div>
