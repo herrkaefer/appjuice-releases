@@ -322,10 +322,9 @@
       .downloads-grid { grid-template-columns: 1fr; }
     }
 
-    /* ─── Screenshot placeholder ─── */
     .screenshot {
       position: relative;
-      background: linear-gradient(145deg, #f0f1f0, #e8e9e8);
+      background: var(--card-bg);
       border-radius: var(--radius-lg);
       border: 1px solid var(--border);
       aspect-ratio: 16 / 10;
@@ -334,6 +333,12 @@
       justify-content: center;
       overflow: hidden;
       box-shadow: var(--shadow-lg);
+    }
+    .screenshot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
     .screenshot::before {
       content: '';
@@ -751,7 +756,7 @@
             <span class="window-dot"></span>
           </div>
           <div class="screenshot">
-            <span class="screenshot-label">App Manager Dashboard — Your apps at a glance</span>
+            <img src="assets/screenshot-main.jpg" alt="App Manager Dashboard — Your apps at a glance">
           </div>
         </div>
       </div>
@@ -891,7 +896,7 @@
           </ul>
         </div>
         <div class="screenshot">
-          <span class="screenshot-label">AI Coding Agent in action</span>
+          <img src="assets/screenshot-dev.png" alt="AI Coding Agent in action">
         </div>
       </div>
 
@@ -908,24 +913,20 @@
           </ul>
         </div>
         <div class="screenshot">
-          <span class="screenshot-label">Runtime AI Assistant at work</span>
+          <img src="assets/screenshot-app.png" alt="Runtime AI Assistant at work">
         </div>
       </div>
 
-      <!-- Feature 3: Local & Sharing -->
-      <div class="feature-row reveal">
-        <div class="feature-text">
+      <div class="feature-row reveal" style="grid-template-columns: 1fr;">
+        <div class="feature-text" style="max-width: 800px; margin: 0 auto; text-align: center;">
           <div class="feature-tag">Local-first &amp; Shareable</div>
           <h3>Own it. Share it. Keep it open.</h3>
-          <p>All code and data lives on your device. Support local AI models for fully offline operation. Export apps as workspaces — anyone who imports them can keep customizing with AI.</p>
-          <ul class="feature-list">
+          <p style="margin: 0 auto 14px;">All code and data lives on your device. Support local AI models for fully offline operation. Export apps as workspaces — anyone who imports them can keep customizing with AI.</p>
+          <ul class="feature-list" style="align-items: center;">
             <li>No subscriptions, no accounts required</li>
             <li>Offline-capable with local models</li>
             <li>Source-level sharing like WordPress themes</li>
           </ul>
-        </div>
-        <div class="screenshot">
-          <span class="screenshot-label">Share &amp; Import workspace</span>
         </div>
       </div>
     </div>
