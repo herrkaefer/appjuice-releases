@@ -247,13 +247,14 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           TAG="${{ steps.release_meta.outputs.tag }}"
           TITLE="AppJuice ${{ steps.release_meta.outputs.version }}"
 
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" release-assets/* --clobber
-            gh release edit "$TAG" --title "$TITLE" --latest
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release upload "$TAG" release-assets/* --repo "$REPO" --clobber
+            gh release edit "$TAG" --repo "$REPO" --title "$TITLE" --latest
           else
-            gh release create "$TAG" release-assets/* --title "$TITLE" --generate-notes --latest
+            gh release create "$TAG" release-assets/* --repo "$REPO" --title "$TITLE" --generate-notes --latest
           fi
