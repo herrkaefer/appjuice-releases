@@ -78,8 +78,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 24.14.1
-          cache: pnpm
-          cache-dependency-path: source/pnpm-lock.yaml
 
       - name: Enable corepack pnpm
         shell: bash
