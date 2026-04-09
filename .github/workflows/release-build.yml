@@ -18,6 +18,9 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   build:
     strategy:
@@ -64,7 +67,7 @@ jobs:
           printf 'token=%s\n' "$TOKEN" >> "$GITHUB_OUTPUT"
 
       - name: Check out AppJuice source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: herrkaefer/appjuice
           ref: ${{ steps.source.outputs.ref }}
@@ -77,9 +80,9 @@ jobs:
           version: 9.15.0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22.17.1
+          node-version: 24.14.1
           cache: pnpm
           cache-dependency-path: source/pnpm-lock.yaml
 
@@ -164,7 +167,7 @@ jobs:
           printf 'asset_path=%s\n' "$TARGET" >> "$GITHUB_OUTPUT"
 
       - name: Upload release asset
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-${{ matrix.id }}
           path: ${{ steps.release_asset.outputs.asset_path }}
@@ -206,7 +209,7 @@ jobs:
           printf 'token=%s\n' "$TOKEN" >> "$GITHUB_OUTPUT"
 
       - name: Check out AppJuice source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: herrkaefer/appjuice
           ref: ${{ steps.source.outputs.ref }}
@@ -229,7 +232,7 @@ jobs:
           printf 'tag=%s\n' "$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Download staged release assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: release-*
           merge-multiple: true
