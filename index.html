@@ -321,26 +321,6 @@
       font-size: 0.86rem;
       color: var(--faint);
     }
-    .download-steps {
-      margin-top: 14px;
-      padding: 14px 16px;
-      border-radius: var(--radius);
-      background: #fff;
-      border: 1px solid var(--border);
-      color: var(--fg);
-      font-size: 0.86rem;
-      line-height: 1.7;
-    }
-    .download-steps code {
-      display: inline-block;
-      margin-top: 6px;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: var(--orange-light);
-      color: var(--fg);
-      font-size: 0.82rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    }
     .download-footer {
       margin-top: 28px;
       display: flex;
@@ -728,7 +708,7 @@
         </a>
         <a href="#features" class="btn btn-outline btn-lg">Learn More</a>
       </div>
-      <p class="hero-note reveal reveal-delay-3">macOS desktop preview available now &middot; Browser/server preview available &middot; Windows &amp; Linux coming soon</p>
+      <p class="hero-note reveal reveal-delay-3">macOS desktop preview available now &middot; Apple Silicon, Windows &amp; Linux coming soon</p>
 
       <div class="hero-screenshot reveal reveal-delay-4">
         <div class="screenshot">
@@ -752,8 +732,8 @@
     <div class="container">
       <div class="section-header reveal">
         <div class="section-label">Downloads</div>
-        <h2>Start with what is actually ready.</h2>
-        <p>The macOS desktop preview is live now. Browser/server mode is available as an early local bundle. Windows and Linux stay visible, but clearly marked as coming soon until those downloads are real.</p>
+        <h2>Start with the desktop app.</h2>
+        <p>The public download is the native macOS desktop build. Other platform downloads stay visible, but clearly marked as coming soon until they are ready for normal users.</p>
       </div>
       <div class="downloads-grid">
         <div class="download-card reveal">
@@ -761,31 +741,14 @@
             <div class="download-card-title">macOS desktop</div>
             <div class="download-card-pill">Available now</div>
           </div>
-          <p>The main AppJuice experience for Mac. Download a desktop shell that starts the local platform for you and opens the manager in a native window.</p>
+          <p>The main AppJuice experience for Mac. Download the native desktop app bundle, open the DMG, and drag AppJuice into Applications.</p>
           <div class="download-links">
-            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-macOS-x64.zip">Download for Intel Mac</a>
+            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-macOS-x64.dmg">Download for Intel Mac</a>
             <span class="btn btn-disabled">Apple Silicon coming soon</span>
           </div>
-          <div class="download-note">This is an unsigned preview ZIP that contains <code>AppJuice.app</code>. Apple Silicon builds and notarization are next.</div>
+          <div class="download-note">This is an unsigned preview DMG built by GitHub Actions. Apple Silicon builds and notarization are next.</div>
         </div>
         <div class="download-card reveal reveal-delay-1">
-          <div class="download-card-header">
-            <div class="download-card-title">Browser / server mode</div>
-            <div class="download-card-pill">Preview</div>
-          </div>
-          <p>Run AppJuice from a portable local bundle and open it in your browser. This is the early hostless path for a spare Mac, a home server, or a machine you want to leave running.</p>
-          <div class="download-links">
-            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-Browser-Server-macOS-x64.tar.gz">Download preview bundle</a>
-            <a class="btn btn-outline" href="https://github.com/herrkaefer/appjuice#build-a-portable-bundle">Setup guide</a>
-          </div>
-          <div class="download-note">Current preview bundle is for macOS Intel. Once extracted, run the starter script and open AppJuice in your browser.</div>
-          <div class="download-steps">
-            1. Extract the archive<br>
-            2. Run <code>./start-appjuice.command</code><br>
-            3. Open <code>http://127.0.0.1:3001/</code>
-          </div>
-        </div>
-        <div class="download-card reveal reveal-delay-2">
           <div class="download-card-header">
             <div class="download-card-title">Windows</div>
             <div class="download-card-pill">Coming soon</div>
@@ -796,7 +759,7 @@
           </div>
           <div class="download-note">Visible here on purpose, so people know the platform target is real, but not shipped yet.</div>
         </div>
-        <div class="download-card reveal reveal-delay-3">
+        <div class="download-card reveal reveal-delay-2">
           <div class="download-card-header">
             <div class="download-card-title">Linux</div>
             <div class="download-card-pill">Coming soon</div>
@@ -805,7 +768,18 @@
           <div class="download-links">
             <span class="btn btn-disabled">Coming soon</span>
           </div>
-          <div class="download-note">For now, use the macOS desktop preview or the browser/server preview bundle.</div>
+          <div class="download-note">For now, the public install path is the macOS desktop preview.</div>
+        </div>
+        <div class="download-card reveal reveal-delay-3">
+          <div class="download-card-header">
+            <div class="download-card-title">Release notes</div>
+            <div class="download-card-pill">GitHub</div>
+          </div>
+          <p>See the latest AppJuice release notes, checksums, and downloadable assets in one place.</p>
+          <div class="download-links">
+            <a class="btn btn-outline" href="https://github.com/herrkaefer/appjuice-releases/releases/latest">Open latest release</a>
+          </div>
+          <div class="download-note">This is the public release repo the website links to directly.</div>
         </div>
       </div>
       <div class="download-footer reveal reveal-delay-4">
