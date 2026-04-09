@@ -44,11 +44,31 @@ jobs:
             printf 'ref=%s\n' "master" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Resolve source repo token
+        id: source_token
+        shell: bash
+        env:
+          APPJUICE_REPO_TOKEN: ${{ secrets.APPJUICE_REPO_TOKEN }}
+          UNIAPP_REPO_TOKEN: ${{ secrets.UNIAPP_REPO_TOKEN }}
+        run: |
+          TOKEN="$APPJUICE_REPO_TOKEN"
+          if [ -z "$TOKEN" ]; then
+            TOKEN="$UNIAPP_REPO_TOKEN"
+          fi
+
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Missing APPJUICE_REPO_TOKEN or UNIAPP_REPO_TOKEN secret with read access to herrkaefer/appjuice"
+            exit 1
+          fi
+
+          printf 'token=%s\n' "$TOKEN" >> "$GITHUB_OUTPUT"
+
       - name: Check out AppJuice source
         uses: actions/checkout@v4
         with:
           repository: herrkaefer/appjuice
           ref: ${{ steps.source.outputs.ref }}
+          token: ${{ steps.source_token.outputs.token }}
           path: source
 
       - name: Set up pnpm
@@ -166,11 +186,31 @@ jobs:
             printf 'ref=%s\n' "master" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Resolve source repo token
+        id: source_token
+        shell: bash
+        env:
+          APPJUICE_REPO_TOKEN: ${{ secrets.APPJUICE_REPO_TOKEN }}
+          UNIAPP_REPO_TOKEN: ${{ secrets.UNIAPP_REPO_TOKEN }}
+        run: |
+          TOKEN="$APPJUICE_REPO_TOKEN"
+          if [ -z "$TOKEN" ]; then
+            TOKEN="$UNIAPP_REPO_TOKEN"
+          fi
+
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Missing APPJUICE_REPO_TOKEN or UNIAPP_REPO_TOKEN secret with read access to herrkaefer/appjuice"
+            exit 1
+          fi
+
+          printf 'token=%s\n' "$TOKEN" >> "$GITHUB_OUTPUT"
+
       - name: Check out AppJuice source
         uses: actions/checkout@v4
         with:
           repository: herrkaefer/appjuice
           ref: ${{ steps.source.outputs.ref }}
+          token: ${{ steps.source_token.outputs.token }}
           path: source
 
       - name: Resolve release metadata
