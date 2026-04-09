@@ -31,6 +31,10 @@ jobs:
             os: macos-15-intel
             arch: x64
             asset_name: AppJuice-macOS-x64.dmg
+          - id: macos-arm64
+            os: macos-15-xlarge
+            arch: arm64
+            asset_name: AppJuice-macOS-arm64.dmg
 
     runs-on: ${{ matrix.os }}
 
@@ -233,7 +237,7 @@ jobs:
           printf 'tag=%s\n' "$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Download staged release assets
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           pattern: release-*
           merge-multiple: true
