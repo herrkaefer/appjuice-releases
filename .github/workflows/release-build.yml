@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       source_ref:
-        description: UniApp source ref to build
+        description: AppJuice source ref to build
         required: true
         default: master
       release_tag:
@@ -60,12 +60,12 @@ jobs:
             printf 'ref=%s\n' "master" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Check out UniApp source
+      - name: Check out AppJuice source
         uses: actions/checkout@v4
         with:
-          repository: herrkaefer/uniapp
+          repository: herrkaefer/appjuice
           ref: ${{ steps.source.outputs.ref }}
-          token: ${{ secrets.UNIAPP_REPO_TOKEN }}
+          token: ${{ secrets.APPJUICE_REPO_TOKEN || secrets.UNIAPP_REPO_TOKEN }}
           path: source
 
       - name: Set up pnpm
@@ -93,6 +93,7 @@ jobs:
         shell: bash
         working-directory: source
         env:
+          APPJUICE_BUNDLE_OFFLINE: "0"
           UNIAPP_BUNDLE_OFFLINE: "0"
         run: |
           OUTPUT_FILE="$(mktemp)"
@@ -150,7 +151,7 @@ jobs:
           TARGET="$RELEASE_DIR/${{ matrix.asset_name }}"
 
           if [ "${{ runner.os }}" = "macOS" ]; then
-            cp artifacts/app/UniApp-*.dmg "$TARGET"
+            cp artifacts/app/AppJuice-*.dmg "$TARGET"
           elif [ "${{ runner.os }}" = "Windows" ]; then
             cp "${{ steps.installer.outputs.installer_dir }}.zip" "$TARGET"
           else
@@ -182,12 +183,12 @@ jobs:
             printf 'ref=%s\n' "master" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Check out UniApp source
+      - name: Check out AppJuice source
         uses: actions/checkout@v4
         with:
-          repository: herrkaefer/uniapp
+          repository: herrkaefer/appjuice
           ref: ${{ steps.source.outputs.ref }}
-          token: ${{ secrets.UNIAPP_REPO_TOKEN }}
+          token: ${{ secrets.APPJUICE_REPO_TOKEN || secrets.UNIAPP_REPO_TOKEN }}
           path: source
 
       - name: Resolve release metadata
