@@ -28,22 +28,6 @@ jobs:
             os: macos-15-intel
             arch: x64
             asset_name: AppJuice-macOS-x64.dmg
-          - id: macos-arm64
-            os: macos-latest
-            arch: arm64
-            asset_name: AppJuice-macOS-arm64.dmg
-          - id: windows-x64
-            os: windows-latest
-            arch: x64
-            asset_name: AppJuice-Windows-x64.zip
-          - id: linux-x64
-            os: ubuntu-latest
-            arch: x64
-            asset_name: AppJuice-Linux-x64.tar.gz
-          - id: linux-arm64
-            os: ubuntu-24.04-arm
-            arch: arm64
-            asset_name: AppJuice-Linux-arm64.tar.gz
 
     runs-on: ${{ matrix.os }}
 
@@ -151,7 +135,7 @@ jobs:
           TARGET="$RELEASE_DIR/${{ matrix.asset_name }}"
 
           if [ "${{ runner.os }}" = "macOS" ]; then
-            cp artifacts/app/AppJuice-*.dmg "$TARGET"
+            cp artifacts/app-webview/AppJuice-*.dmg "$TARGET"
           elif [ "${{ runner.os }}" = "Windows" ]; then
             cp "${{ steps.installer.outputs.installer_dir }}.zip" "$TARGET"
           else
