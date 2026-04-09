@@ -31,6 +31,10 @@ jobs:
             os: macos-15-intel
             arch: x64
             asset_name: AppJuice-macOS-x64.dmg
+          - id: macos-arm64
+            os: macos-15
+            arch: arm64
+            asset_name: AppJuice-macOS-arm64.dmg
 
     runs-on: ${{ matrix.os }}
 
