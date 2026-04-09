@@ -244,11 +244,16 @@ jobs:
           path: release-assets
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.release_meta.outputs.tag }}
-          name: AppJuice ${{ steps.release_meta.outputs.version }}
-          files: release-assets/*
-          make_latest: true
-          generate_release_notes: true
-          overwrite_files: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.release_meta.outputs.tag }}"
+          TITLE="AppJuice ${{ steps.release_meta.outputs.version }}"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release-assets/* --clobber
+            gh release edit "$TAG" --title "$TITLE" --latest
+          else
+            gh release create "$TAG" release-assets/* --title "$TITLE" --generate-notes --latest
+          fi
