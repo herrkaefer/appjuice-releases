@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AppJuice — Create AI-Powered Local Apps with Natural Language</title>
-  <meta name="description" content="AppJuice is your personal software factory. Describe the tool you want, AI creates it with built-in intelligence, running on your device, shareable with anyone.">
+  <title>AppJuice — Build and run private AI tools locally</title>
+  <meta name="description" content="AppJuice helps you brew, tune, use, and share private AI tools on your own computer. Build and run in one place, work with real files, and share working source plus recipe.">
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -149,6 +149,14 @@
     .btn-outline:hover {
       border-color: var(--fg);
       background: var(--card-bg);
+    }
+    .btn-disabled {
+      background: #f1f3f1;
+      color: var(--faint);
+      border: 1.5px solid var(--border);
+      cursor: default;
+      pointer-events: none;
+      box-shadow: none;
     }
     .btn-lg { padding: 14px 32px; font-size: 1rem; border-radius: var(--radius-lg); }
 
@@ -312,6 +320,26 @@
     .download-note {
       font-size: 0.86rem;
       color: var(--faint);
+    }
+    .download-steps {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--fg);
+      font-size: 0.86rem;
+      line-height: 1.7;
+    }
+    .download-steps code {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--orange-light);
+      color: var(--fg);
+      font-size: 0.82rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     }
     .download-footer {
       margin-top: 28px;
@@ -688,10 +716,10 @@
         <div class="hero-badge">Now Available</div>
       </div>
       <h1 class="reveal reveal-delay-1">
-        Create <em>AI-powered</em> local apps<br>with natural language.
+        Build and run <em>private</em> AI tools<br>on your own computer.
       </h1>
       <p class="hero-sub reveal reveal-delay-2">
-        From idea to app, from using to sharing — no code required.
+        Brew a first version in plain language, tune it with AI, use it in the same place, and share the working source plus its recipe when it tastes right.
       </p>
       <div class="hero-actions reveal reveal-delay-3">
         <a href="#downloads" class="btn btn-primary btn-lg">
@@ -700,7 +728,7 @@
         </a>
         <a href="#features" class="btn btn-outline btn-lg">Learn More</a>
       </div>
-      <p class="hero-note reveal reveal-delay-3">macOS, Windows &amp; Linux &middot; No account needed &middot; Bring your own AI keys</p>
+      <p class="hero-note reveal reveal-delay-3">macOS desktop preview available now &middot; Browser/server preview available &middot; Windows &amp; Linux coming soon</p>
 
       <div class="hero-screenshot reveal reveal-delay-4">
         <div class="screenshot">
@@ -714,7 +742,7 @@
   <section class="oneliner">
     <div class="container">
       <p class="oneliner-text reveal">
-        AppJuice is your <strong>personal software factory</strong>: describe the tool you want in natural language, AI creates it for you, with <strong>built-in intelligence</strong>, running entirely on <strong>your device</strong>, freely shareable with anyone.
+        AppJuice is a <strong>local-first home for private AI tools</strong>: brew something useful, tune it as you learn, use it right away, and share the working juice and its <strong>recipe</strong> instead of getting trapped inside someone else's cloud.
       </p>
     </div>
   </section>
@@ -724,55 +752,60 @@
     <div class="container">
       <div class="section-header reveal">
         <div class="section-label">Downloads</div>
-        <h2>Get the latest AppJuice build for your platform.</h2>
-        <p>These links point to the newest public release artifacts on GitHub.</p>
+        <h2>Start with what is actually ready.</h2>
+        <p>The macOS desktop preview is live now. Browser/server mode is available as an early local bundle. Windows and Linux stay visible, but clearly marked as coming soon until those downloads are real.</p>
       </div>
       <div class="downloads-grid">
         <div class="download-card reveal">
           <div class="download-card-header">
-            <div class="download-card-title">macOS</div>
-            <div class="download-card-pill">Latest DMG</div>
+            <div class="download-card-title">macOS desktop</div>
+            <div class="download-card-pill">Available now</div>
           </div>
-          <p>Choose the right Mac build for your chip. Both buttons always point to the newest release.</p>
+          <p>The main AppJuice experience for Mac. Download a desktop shell that starts the local platform for you and opens the manager in a native window.</p>
           <div class="download-links">
-            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-macOS-arm64.dmg">Apple Silicon</a>
-            <a class="btn btn-outline" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-macOS-x64.dmg">Intel</a>
+            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-macOS-x64.zip">Download for Intel Mac</a>
+            <span class="btn btn-disabled">Apple Silicon coming soon</span>
           </div>
-          <div class="download-note">Install from the downloaded DMG. In-app update flow will come later.</div>
+          <div class="download-note">This is an unsigned preview ZIP that contains <code>AppJuice.app</code>. Apple Silicon builds and notarization are next.</div>
         </div>
         <div class="download-card reveal reveal-delay-1">
           <div class="download-card-header">
-            <div class="download-card-title">Windows</div>
-            <div class="download-card-pill">Latest ZIP</div>
+            <div class="download-card-title">Browser / server mode</div>
+            <div class="download-card-pill">Preview</div>
           </div>
-          <p>Download the current Windows packaged build for local install-style testing.</p>
+          <p>Run AppJuice from a portable local bundle and open it in your browser. This is the early hostless path for a spare Mac, a home server, or a machine you want to leave running.</p>
           <div class="download-links">
-            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-Windows-x64.zip">Windows x64</a>
+            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-Browser-Server-macOS-x64.tar.gz">Download preview bundle</a>
+            <a class="btn btn-outline" href="https://github.com/herrkaefer/appjuice#build-a-portable-bundle">Setup guide</a>
           </div>
-          <div class="download-note">A native Windows installer is planned next. For now, use the packaged ZIP build.</div>
+          <div class="download-note">Current preview bundle is for macOS Intel. Once extracted, run the starter script and open AppJuice in your browser.</div>
+          <div class="download-steps">
+            1. Extract the archive<br>
+            2. Run <code>./start-appjuice.command</code><br>
+            3. Open <code>http://127.0.0.1:3001/</code>
+          </div>
         </div>
         <div class="download-card reveal reveal-delay-2">
           <div class="download-card-header">
-            <div class="download-card-title">Linux</div>
-            <div class="download-card-pill">Latest TAR.GZ</div>
+            <div class="download-card-title">Windows</div>
+            <div class="download-card-pill">Coming soon</div>
           </div>
-          <p>Choose the Linux build that matches your machine architecture.</p>
+          <p>Windows desktop packaging is in progress, but we are not putting up a public download until the installer path and update story feel solid enough for normal users.</p>
           <div class="download-links">
-            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-Linux-x64.tar.gz">Linux x64</a>
-            <a class="btn btn-outline" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-Linux-arm64.tar.gz">Linux ARM64</a>
+            <span class="btn btn-disabled">Coming soon</span>
           </div>
-          <div class="download-note">More native Linux formats like AppImage are planned after the packaged TAR.GZ flow.</div>
+          <div class="download-note">Visible here on purpose, so people know the platform target is real, but not shipped yet.</div>
         </div>
         <div class="download-card reveal reveal-delay-3">
           <div class="download-card-header">
-            <div class="download-card-title">Release Notes</div>
-            <div class="download-card-pill">GitHub</div>
+            <div class="download-card-title">Linux</div>
+            <div class="download-card-pill">Coming soon</div>
           </div>
-          <p>Open the latest release notes, changelog, and all published artifacts in one place.</p>
+          <p>Linux desktop and headless packages are part of the roadmap, especially for NAS, mini-PC, and always-on home-server setups, but the public downloads are not ready yet.</p>
           <div class="download-links">
-            <a class="btn btn-outline" href="https://github.com/herrkaefer/appjuice-releases/releases/latest">Open latest release</a>
+            <span class="btn btn-disabled">Coming soon</span>
           </div>
-          <div class="download-note">This site can now link directly to the public release repo and its latest platform builds.</div>
+          <div class="download-note">For now, use the macOS desktop preview or the browser/server preview bundle.</div>
         </div>
       </div>
       <div class="download-footer reveal reveal-delay-4">
@@ -786,36 +819,36 @@
     <div class="container">
       <div class="section-header reveal">
         <div class="section-label">Why AppJuice</div>
-        <h2>Software creation,<br>reimagined.</h2>
+        <h2>Why it feels different from a cloud app builder.</h2>
       </div>
       <div class="values-grid">
         <div class="value-card reveal">
           <div class="value-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff4f00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838.838-2.872a2 2 0 0 1 .506-.855z"/></svg>
           </div>
-          <h3>Say it, build it</h3>
-          <p>No coding, no hiring developers. Describe what you need in plain English, and get a working app in minutes. Not happy? Keep talking — your app evolves with you.</p>
+          <h3>Build and use in one place</h3>
+          <p>You do not have to bounce between an AI builder, a deployment tool, and a separate runtime. Brew the first version, keep tuning it, and start using it in the same home.</p>
         </div>
         <div class="value-card reveal reveal-delay-1">
           <div class="value-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff4f00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/><circle cx="12" cy="15" r="1.5"/></svg>
           </div>
-          <h3>Apps are intelligent</h3>
-          <p>Your apps aren't just AI-generated static tools — they have built-in AI capabilities. A to-do app that auto-prioritizes, notes that summarize themselves, a CRM that categorizes clients automatically.</p>
+          <h3>Private by default</h3>
+          <p>AppJuice is built for tools that should stay close to your machine, your files, and your routines. That makes it a better fit for personal workflows than a cloud platform that starts by taking everything online.</p>
         </div>
         <div class="value-card reveal reveal-delay-2">
           <div class="value-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff4f00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m9 10 3 3 3-3"/></svg>
           </div>
-          <h3>Everything on your device</h3>
-          <p>Code, data, and AI conversations stay on your machine. No cloud servers quietly storing your information. Your apps, your data — fully yours.</p>
+          <h3>Works with real files</h3>
+          <p>This is meant for actual day-to-day tools, not just demos. The platform can support apps that work with your local files, documents, folders, and desktop capabilities when that is what the job needs.</p>
         </div>
         <div class="value-card reveal reveal-delay-3">
           <div class="value-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff4f00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
           </div>
-          <h3>Share and keep growing</h3>
-          <p>Export and share your apps. Recipients don't just get a frozen tool — they can keep modifying it with AI. Add dark mode, change layouts, add features. One sentence is all it takes.</p>
+          <h3>Share the juice and the recipe</h3>
+          <p>When something is worth passing on, you can share the working app as source along with its recipe: a prompt distilled from the version that already works. The next person gets something they can keep tuning, not a dead end.</p>
         </div>
       </div>
     </div>
@@ -826,53 +859,53 @@
     <div class="container">
       <div class="section-header reveal">
         <div class="section-label">Features</div>
-        <h2>Two agents, one vision.</h2>
-        <p>A Coding Agent builds your app. A Runtime Agent makes it smart. Together, they turn your words into living software.</p>
+        <h2>Brew it, tune it, use it.</h2>
+        <p>Under the hood, AppJuice gives each app a shared AI-powered runtime and optional local capabilities. On the surface, it should still feel simple enough for normal people to actually use.</p>
       </div>
 
-      <!-- Feature 1: Coding Agent -->
+      <!-- Feature 1: Brew -->
       <div class="feature-row reveal">
         <div class="feature-text">
-          <div class="feature-tag">Coding Agent</div>
-          <h3>Build apps through conversation</h3>
-          <p>Describe what you want, watch it materialize in real time. The AI writes complete applications — frontend, logic, everything — while you preview live.</p>
+          <div class="feature-tag">Brew</div>
+          <h3>Describe the tool you wish you had</h3>
+          <p>You start in plain language. AppJuice brews the first workable version, so you can react to something real instead of trying to specify every detail upfront.</p>
           <ul class="feature-list">
-            <li>Natural language to full application</li>
-            <li>Real-time preview as you speak</li>
-            <li>Iterative refinement through dialogue</li>
+            <li>Plain-language starting point instead of a blank editor</li>
+            <li>Live preview while the app takes shape</li>
+            <li>A better fit for non-technical users than code-first tools</li>
           </ul>
         </div>
         <div class="screenshot">
-          <img src="assets/screenshot-dev.png" alt="AI Coding Agent in action">
+          <img src="assets/screenshot-dev.png" alt="Brewing and tuning an app with AI help">
         </div>
       </div>
 
-      <!-- Feature 2: Runtime Agent -->
+      <!-- Feature 2: Use -->
       <div class="feature-row reversed reveal">
         <div class="feature-text">
-          <div class="feature-tag">Runtime Agent</div>
-          <h3>Apps that think for themselves</h3>
-          <p>Each app can have its own embedded AI assistant with custom tools and capabilities. Not static pages — intelligent, living tools.</p>
+          <div class="feature-tag">Use</div>
+          <h3>A real app, not just a coding session</h3>
+          <p>AppJuice is not only for making the thing. It is also where the thing runs. That matters when a tool should keep working with AI, local files, or desktop behavior after the first draft is done.</p>
           <ul class="feature-list">
-            <li>Per-app AI assistants with custom tools</li>
-            <li>Automatic categorization, summarization, analysis</li>
-            <li>Multi-provider AI support</li>
+            <li>Apps can include their own AI helpers and tools</li>
+            <li>Shared platform runtime means apps do not each reinvent the basics</li>
+            <li>Works better for long-lived personal tools than throwaway cloud demos</li>
           </ul>
         </div>
         <div class="screenshot">
-          <img src="assets/screenshot-app.png" alt="Runtime AI Assistant at work">
+          <img src="assets/screenshot-app.png" alt="A running AppJuice app with built-in AI help">
         </div>
       </div>
 
       <div class="feature-row reveal" style="grid-template-columns: 1fr;">
         <div class="feature-text" style="max-width: 800px; margin: 0 auto; text-align: center;">
-          <div class="feature-tag">Local-first &amp; Shareable</div>
-          <h3>Own it. Share it. Keep it open.</h3>
-          <p style="margin: 0 auto 14px;">All code and data lives on your device. Support local AI models for fully offline operation. Export apps as workspaces — anyone who imports them can keep customizing with AI.</p>
+          <div class="feature-tag">Tune &amp; Share</div>
+          <h3>Keep refining the juice, then pass it on.</h3>
+          <p style="margin: 0 auto 14px;">A good AppJuice app is not a one-shot prompt result. You can keep tuning the behavior, wording, design, and workflow over time, then share the working source and recipe with someone else when it is ready.</p>
           <ul class="feature-list" style="align-items: center;">
-            <li>No subscriptions, no accounts required</li>
-            <li>Offline-capable with local models</li>
-            <li>Source-level sharing like WordPress themes</li>
+            <li>Source-first sharing instead of locked hosted output</li>
+            <li>Recipe sharing so the intent can travel with the working app</li>
+            <li>Local-first ownership instead of platform lock-in</li>
           </ul>
         </div>
       </div>
@@ -884,7 +917,7 @@
     <div class="container">
       <div class="section-header reveal">
         <div class="section-label">Comparison</div>
-        <h2>How AppJuice stacks up.</h2>
+        <h2>Built for a different job.</h2>
       </div>
       <div class="comparison-table-wrap reveal">
         <table class="comparison-table">
