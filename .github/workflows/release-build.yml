@@ -35,6 +35,10 @@ jobs:
             os: macos-15
             arch: arm64
             asset_name: AppJuice-macOS-arm64.dmg
+          - id: windows-x64
+            os: windows-latest
+            arch: x64
+            asset_name: AppJuice-Windows-x64-Setup.exe
 
     runs-on: ${{ matrix.os }}
 
@@ -112,40 +116,33 @@ jobs:
           BUNDLE_DIR="$(cat "$OUTPUT_FILE")"
           printf 'bundle_dir=%s\n' "$BUNDLE_DIR" >> "$GITHUB_OUTPUT"
 
-      - name: Build prototype installer
-        if: runner.os == 'Windows' || runner.os == 'Linux'
-        id: installer
-        shell: bash
-        working-directory: source
-        run: |
-          OUTPUT_FILE="$(mktemp)"
-          PLATFORM_NAME="$(echo '${{ runner.os }}' | tr '[:upper:]' '[:lower:]')"
-          node scripts/build-prototype-installer.mjs \
-            --platform "$PLATFORM_NAME" \
-            --bundle-root "${{ steps.bundle.outputs.bundle_dir }}" \
-            --output-file "$OUTPUT_FILE"
-          INSTALLER_DIR="$(cat "$OUTPUT_FILE")"
-          printf 'installer_dir=%s\n' "$INSTALLER_DIR" >> "$GITHUB_OUTPUT"
-
-      - name: Archive prototype installer (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        working-directory: source
-        run: |
-          INSTALLER_DIR="${{ steps.installer.outputs.installer_dir }}"
-          INSTALLER_NAME="$(basename "$INSTALLER_DIR")"
-          cd "$(dirname "$INSTALLER_DIR")"
-          tar -czf "$INSTALLER_NAME.tar.gz" "$INSTALLER_NAME"
-
-      - name: Archive prototype installer (Windows)
+      - name: Build Windows app
         if: runner.os == 'Windows'
         shell: pwsh
         working-directory: source
         run: |
-          $installerDir = "${{ steps.installer.outputs.installer_dir }}"
-          $installerName = Split-Path $installerDir -Leaf
-          $parentDir = Split-Path $installerDir -Parent
-          Compress-Archive -Path $installerDir -DestinationPath (Join-Path $parentDir "$installerName.zip") -Force
+          $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          Import-Module (Join-Path $vsPath "Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
+          Enter-VsDevShell -VsInstallPath $vsPath -SkipAutomaticLocation -DevCmdArguments "-arch=x64"
+          node scripts/build-windows-app.mjs
+
+      - name: Install NSIS
+        if: runner.os == 'Windows'
+        shell: pwsh
+        working-directory: source
+        run: |
+          choco install nsis --yes --no-progress
+
+      - name: Build Windows native installer
+        if: runner.os == 'Windows'
+        id: windows_installer
+        shell: pwsh
+        working-directory: source
+        run: |
+          $outputFile = New-TemporaryFile
+          node scripts/build-windows-installer.mjs --app-dir "artifacts\windows-app\AppJuice" --output-file "$outputFile"
+          $installerPath = (Get-Content $outputFile -Raw).Trim()
+          "installer_path=$installerPath" >> $env:GITHUB_OUTPUT
 
       - name: Build macOS dmg
         if: runner.os == 'macOS'
@@ -164,9 +161,7 @@ jobs:
           if [ "${{ runner.os }}" = "macOS" ]; then
             cp artifacts/app-webview/AppJuice-*.dmg "$TARGET"
           elif [ "${{ runner.os }}" = "Windows" ]; then
-            cp "${{ steps.installer.outputs.installer_dir }}.zip" "$TARGET"
-          else
-            cp "${{ steps.installer.outputs.installer_dir }}.tar.gz" "$TARGET"
+            cp "${{ steps.windows_installer.outputs.installer_path }}" "$TARGET"
           fi
 
           printf 'asset_path=%s\n' "$TARGET" >> "$GITHUB_OUTPUT"
