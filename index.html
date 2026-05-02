@@ -38,7 +38,7 @@
         {
           "@type": "SoftwareApplication",
           "name": "AppJuice",
-          "operatingSystem": "macOS",
+          "operatingSystem": "macOS, Windows",
           "applicationCategory": "UtilitiesApplication",
           "url": "https://herrkaefer.github.io/appjuice-releases/",
           "downloadUrl": "https://github.com/herrkaefer/appjuice-releases/releases/latest",
@@ -106,7 +106,7 @@
               "name": "Can I run AppJuice on a home server?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Home-server and remote-access support is planned for a later release. The current public install path is the macOS desktop app."
+                "text": "Home-server and remote-access support is planned for a later release. The current public install path is the desktop app for macOS or Windows."
               }
             }
           ]
@@ -969,7 +969,7 @@
         </a>
         <a href="#why" class="btn btn-outline btn-lg">See what's different</a>
       </div>
-      <p class="hero-note reveal reveal-delay-3">macOS desktop preview available now · Windows &amp; Linux coming soon</p>
+      <p class="hero-note reveal reveal-delay-3">Desktop preview available now for macOS and Windows · Linux coming later</p>
 
       <div class="trust-row reveal reveal-delay-3">
         <span class="trust-pill">
@@ -1457,7 +1457,7 @@
         </div>
         <div class="faq-card reveal reveal-delay-2">
           <h3>Can I run it on a home server?</h3>
-          <p>That remote-access path is planned for a later release. The current public install path is the macOS desktop app.</p>
+          <p>That remote-access path is planned for a later release. The current public install path is the desktop app for macOS or Windows.</p>
         </div>
       </div>
     </div>
@@ -1469,15 +1469,15 @@
       <div class="section-header reveal">
         <div class="section-label">Downloads</div>
         <h2>Start with the desktop app.</h2>
-        <p>The public download is the native macOS desktop build for both Intel and Apple Silicon Macs. Other platforms stay visible but marked as coming soon until they're ready for normal users.</p>
+        <p>The public download is the Electron desktop preview for macOS and Windows. Linux stays visible but marked as coming soon until we have a test path.</p>
       </div>
       <div class="downloads-grid">
         <div class="download-card reveal">
           <div class="download-card-header">
             <div class="download-card-title">macOS desktop</div>
-            <div class="download-card-pill">Available now</div>
+            <div class="download-card-pill is-positive">Available now</div>
           </div>
-          <p>The main AppJuice experience for Mac. Download the native desktop app bundle, open the DMG, and drag AppJuice into Applications.</p>
+          <p>The AppJuice desktop experience for Mac. Download the DMG, open it, and drag AppJuice into Applications.</p>
           <div class="download-links">
             <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-macOS-x64.dmg">Download for Intel Mac</a>
             <a class="btn btn-outline" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-macOS-arm64.dmg">Download for Apple Silicon</a>
@@ -1487,24 +1487,24 @@
         <div class="download-card reveal reveal-delay-1">
           <div class="download-card-header">
             <div class="download-card-title">Windows</div>
-            <div class="download-card-pill">Coming soon</div>
+            <div class="download-card-pill is-positive">Available now</div>
           </div>
-          <p>Windows desktop packaging is in progress. We won't put up a public download until the installer and update path feel solid for normal users.</p>
+          <p>The AppJuice desktop preview for Windows 10/11 on x64 PCs. Download the installer and run AppJuice from the Start menu when setup finishes.</p>
           <div class="download-links">
-            <span class="btn btn-disabled">Coming soon</span>
+            <a class="btn btn-primary" href="https://github.com/herrkaefer/appjuice-releases/releases/latest/download/AppJuice-Windows-x64-Setup.exe">Download for Windows x64</a>
           </div>
-          <div class="download-note">Listed here on purpose — the platform target is real, just not shipped yet.</div>
+          <div class="download-note">This is an unsigned preview installer built by GitHub Actions. Code signing is next.</div>
         </div>
         <div class="download-card reveal reveal-delay-2">
           <div class="download-card-header">
             <div class="download-card-title">Linux Desktop</div>
             <div class="download-card-pill">Coming soon</div>
           </div>
-          <p>A native Linux desktop experience is on the roadmap. The public download will arrive once packaging and updates feel solid for normal users.</p>
+          <p>A Linux desktop package is on the roadmap. The public download will arrive once packaging and updates can be tested.</p>
           <div class="download-links">
             <span class="btn btn-disabled">Coming soon</span>
           </div>
-          <div class="download-note">For now, the public install path is the macOS desktop preview.</div>
+          <div class="download-note">Linux packaging exists in the source tree, but it is not part of public release yet.</div>
         </div>
         <div class="download-card reveal reveal-delay-3">
           <div class="download-card-header">
