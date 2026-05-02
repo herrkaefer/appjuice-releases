@@ -99,32 +99,14 @@ jobs:
         working-directory: source
         run: pnpm install --frozen-lockfile
 
-      - name: Build workspace packages
-        working-directory: source
-        run: pnpm build
-
-      - name: Build portable bundle
-        id: bundle
-        shell: bash
+      - name: Build Windows Electron app
+        if: runner.os == 'Windows'
+        shell: pwsh
         working-directory: source
         env:
           APPJUICE_BUNDLE_OFFLINE: "0"
           UNIAPP_BUNDLE_OFFLINE: "0"
-        run: |
-          OUTPUT_FILE="$(mktemp)"
-          node scripts/build-bundle.mjs --output-file "$OUTPUT_FILE"
-          BUNDLE_DIR="$(cat "$OUTPUT_FILE")"
-          printf 'bundle_dir=%s\n' "$BUNDLE_DIR" >> "$GITHUB_OUTPUT"
-
-      - name: Build Windows app
-        if: runner.os == 'Windows'
-        shell: pwsh
-        working-directory: source
-        run: |
-          $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
-          Import-Module (Join-Path $vsPath "Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
-          Enter-VsDevShell -VsInstallPath $vsPath -SkipAutomaticLocation -DevCmdArguments "-arch=x64"
-          node scripts/build-windows-app.mjs
+        run: node scripts/build-electron-app.mjs --platform windows
 
       - name: Install NSIS
         if: runner.os == 'Windows'
@@ -133,21 +115,24 @@ jobs:
         run: |
           choco install nsis --yes --no-progress
 
-      - name: Build Windows native installer
+      - name: Build Windows Electron installer
         if: runner.os == 'Windows'
         id: windows_installer
         shell: pwsh
         working-directory: source
         run: |
           $outputFile = New-TemporaryFile
-          node scripts/build-windows-installer.mjs --app-dir "artifacts\windows-app\AppJuice" --output-file "$outputFile"
+          node scripts/build-windows-installer.mjs --app-dir "artifacts\electron-windows\AppJuice" --output-file "$outputFile"
           $installerPath = (Get-Content $outputFile -Raw).Trim()
           "installer_path=$installerPath" >> $env:GITHUB_OUTPUT
 
-      - name: Build macOS dmg
+      - name: Build macOS Electron dmg
         if: runner.os == 'macOS'
         working-directory: source
-        run: pnpm bundle:macos-dmg
+        env:
+          APPJUICE_BUNDLE_OFFLINE: "0"
+          UNIAPP_BUNDLE_OFFLINE: "0"
+        run: pnpm bundle:electron-macos-dmg
 
       - name: Stage release asset
         id: release_asset
@@ -159,7 +144,7 @@ jobs:
           TARGET="$RELEASE_DIR/${{ matrix.asset_name }}"
 
           if [ "${{ runner.os }}" = "macOS" ]; then
-            cp artifacts/app-webview/AppJuice-*.dmg "$TARGET"
+            cp artifacts/electron-macos/AppJuice-Electron-*.dmg "$TARGET"
           elif [ "${{ runner.os }}" = "Windows" ]; then
             cp "${{ steps.windows_installer.outputs.installer_path }}" "$TARGET"
           fi
