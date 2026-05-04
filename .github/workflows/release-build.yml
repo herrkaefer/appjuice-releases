@@ -35,10 +35,6 @@ jobs:
             os: macos-15
             arch: arm64
             asset_name: AppJuice-macOS-arm64.dmg
-          - id: windows-x64
-            os: windows-latest
-            arch: x64
-            asset_name: AppJuice-Windows-x64-Setup.exe
 
     runs-on: ${{ matrix.os }}
 
@@ -99,33 +95,6 @@ jobs:
         working-directory: source
         run: pnpm install --frozen-lockfile
 
-      - name: Build Windows Electron app
-        if: runner.os == 'Windows'
-        shell: pwsh
-        working-directory: source
-        env:
-          APPJUICE_BUNDLE_OFFLINE: "0"
-          UNIAPP_BUNDLE_OFFLINE: "0"
-        run: node scripts/build-electron-app.mjs --platform windows
-
-      - name: Install NSIS
-        if: runner.os == 'Windows'
-        shell: pwsh
-        working-directory: source
-        run: |
-          choco install nsis --yes --no-progress
-
-      - name: Build Windows Electron installer
-        if: runner.os == 'Windows'
-        id: windows_installer
-        shell: pwsh
-        working-directory: source
-        run: |
-          $outputFile = New-TemporaryFile
-          node scripts/build-windows-installer.mjs --app-dir "artifacts\electron-windows\AppJuice" --output-file "$outputFile"
-          $installerPath = (Get-Content $outputFile -Raw).Trim()
-          "installer_path=$installerPath" >> $env:GITHUB_OUTPUT
-
       - name: Build macOS Electron dmg
         if: runner.os == 'macOS'
         working-directory: source
@@ -145,8 +114,6 @@ jobs:
 
           if [ "${{ runner.os }}" = "macOS" ]; then
             cp artifacts/electron-macos/AppJuice-Electron-*.dmg "$TARGET"
-          elif [ "${{ runner.os }}" = "Windows" ]; then
-            cp "${{ steps.windows_installer.outputs.installer_path }}" "$TARGET"
           fi
 
           printf 'asset_path=%s\n' "$TARGET" >> "$GITHUB_OUTPUT"
