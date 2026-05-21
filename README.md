@@ -1,11 +1,17 @@
 # AppJuice Releases
 
-This repository is used for AppJuice release publishing.
+This repository publishes AppJuice desktop release artifacts.
 
-- `main`: release branch
-- `pages`: website branch
+- `main` contains this release README and the GitHub Actions workflow used to publish releases.
+- GitHub Releases in this repository provide the downloadable desktop installers.
+- The public AppJuice website is no longer hosted from this repository.
 
-The website code lives on `pages`.
+Release builds are triggered from tagged source snapshots in
+[`herrkaefer/appjuice`](https://github.com/herrkaefer/appjuice). The workflow
+builds and uploads the supported macOS desktop packages:
+
+- `AppJuice-macOS-arm64.dmg`
+- `AppJuice-macOS-x64.dmg`
 
 ## macOS unsigned app notice
 
