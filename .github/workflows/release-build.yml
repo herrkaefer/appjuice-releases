@@ -31,12 +31,15 @@ jobs:
             os: macos-15-intel
             arch: x64
             asset_name: AppJuice-macOS-x64.dmg
+            update_asset_name: AppJuice-macOS-x64.zip
           - id: macos-arm64
             os: macos-15
             arch: arm64
             asset_name: AppJuice-macOS-arm64.dmg
+            update_asset_name: AppJuice-macOS-arm64.zip
 
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 360
 
     steps:
       - name: Resolve source ref
@@ -127,15 +130,17 @@ jobs:
 
           if [ "${{ runner.os }}" = "macOS" ]; then
             cp artifacts/electron-macos/AppJuice-Electron-*.dmg "$TARGET"
+            cp artifacts/electron-macos/AppJuice-Electron-*.zip "$RELEASE_DIR/${{ matrix.update_asset_name }}"
           fi
 
           printf 'asset_path=%s\n' "$TARGET" >> "$GITHUB_OUTPUT"
+          printf 'asset_dir=%s\n' "$RELEASE_DIR" >> "$GITHUB_OUTPUT"
 
       - name: Upload release asset
         uses: actions/upload-artifact@v6
         with:
           name: release-${{ matrix.id }}
-          path: ${{ steps.release_asset.outputs.asset_path }}
+          path: ${{ steps.release_asset.outputs.asset_dir }}/*
 
   publish:
     needs: build
@@ -211,10 +216,43 @@ jobs:
         run: |
           TAG="${{ steps.release_meta.outputs.tag }}"
           TITLE="AppJuice ${{ steps.release_meta.outputs.version }}"
+          RELEASES_JSON="$(gh release list --repo "$REPO" --limit 100 --exclude-drafts --exclude-pre-releases --json tagName)"
+          LATEST_FLAG="$(TAG="$TAG" RELEASES_JSON="$RELEASES_JSON" node <<'NODE'
+          const currentTag = process.env.TAG || "";
+          const releases = JSON.parse(process.env.RELEASES_JSON || "[]");
+          const parseVersion = (tag) => {
+            const match = String(tag || "").trim().match(/^v?(\d+)\.(\d+)\.(\d+)$/);
+            return match ? match.slice(1).map((value) => Number.parseInt(value, 10)) : null;
+          };
+          const compareVersions = (left, right) => {
+            for (let index = 0; index < 3; index += 1) {
+              const delta = (left[index] || 0) - (right[index] || 0);
+              if (delta !== 0) return delta;
+            }
+            return 0;
+          };
+          const current = parseVersion(currentTag);
+          if (!current) {
+            process.stdout.write("--latest=false");
+            process.exit(0);
+          }
+          const highest = releases
+            .map((release) => parseVersion(release.tagName))
+            .filter(Boolean)
+            .sort(compareVersions)
+            .at(-1);
+          process.stdout.write(!highest || compareVersions(current, highest) >= 0 ? "--latest" : "--latest=false");
+          NODE
+          )"
+          CREATE_LATEST_FLAG=("$LATEST_FLAG")
+          EDIT_LATEST_FLAG=()
+          if [ "$LATEST_FLAG" = "--latest" ]; then
+            EDIT_LATEST_FLAG=("--latest")
+          fi
 
           if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             gh release upload "$TAG" release-assets/* --repo "$REPO" --clobber
-            gh release edit "$TAG" --repo "$REPO" --title "$TITLE" --latest
+            gh release edit "$TAG" --repo "$REPO" --title "$TITLE" "${EDIT_LATEST_FLAG[@]}"
           else
-            gh release create "$TAG" release-assets/* --repo "$REPO" --title "$TITLE" --generate-notes --latest
+            gh release create "$TAG" release-assets/* --repo "$REPO" --title "$TITLE" --generate-notes "${CREATE_LATEST_FLAG[@]}"
           fi
