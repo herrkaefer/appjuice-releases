@@ -95,6 +95,19 @@ jobs:
         working-directory: source
         run: pnpm install --frozen-lockfile
 
+      - name: Set up Apple signing credentials
+        if: runner.os == 'macOS'
+        working-directory: source
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_NOTARY_KEYCHAIN_PROFILE: appjuice-notary
+        run: ./scripts/ci/setup-macos-signing.sh
+
       - name: Build macOS Electron dmg
         if: runner.os == 'macOS'
         working-directory: source
