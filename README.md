@@ -1,5 +1,5 @@
 # AppJuice Releases
 
-This repository publishes AppJuice desktop release artifacts.
+This repository publishes AppJuice release artifacts.
 
 Website: https://appjuice.app
