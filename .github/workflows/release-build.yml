@@ -18,6 +18,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: appjuice-release-${{ github.event.inputs.release_tag || github.event.client_payload.release_tag || github.event.inputs.source_ref || github.event.client_payload.source_ref || github.run_id }}
+  cancel-in-progress: false
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
@@ -141,6 +145,7 @@ jobs:
         with:
           name: release-${{ matrix.id }}
           path: ${{ steps.release_asset.outputs.asset_dir }}/*
+          retention-days: 3
 
   publish:
     needs: build
