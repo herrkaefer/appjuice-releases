@@ -51,6 +51,11 @@ jobs:
             arch: arm64
             asset_name: AppJuice-Linux-arm64.tar.gz
             update_asset_name: ""
+          - id: linux-desktop-x64
+            os: ubuntu-22.04
+            arch: x64
+            asset_name: AppJuice-Linux-x64.AppImage
+            update_asset_name: ""
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 360
@@ -126,12 +131,30 @@ jobs:
         run: ./scripts/ci/setup-macos-signing.sh
 
       - name: Build Linux server bundle
-        if: runner.os == 'Linux'
+        if: startsWith(matrix.id, 'linux-server-')
         working-directory: source
         env:
           APPJUICE_BUNDLE_OFFLINE: "0"
           UNIAPP_BUNDLE_OFFLINE: "0"
         run: pnpm bundle:linux-server -- --output-root "$RUNNER_TEMP/linux-server-release" --platform linux --arch "${{ matrix.arch }}"
+
+      - name: Install AppImage tooling
+        if: startsWith(matrix.id, 'linux-desktop-')
+        shell: bash
+        run: |
+          curl -fsSL -o /tmp/appimagetool \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x /tmp/appimagetool
+
+      - name: Build Linux Electron AppImage
+        if: startsWith(matrix.id, 'linux-desktop-')
+        working-directory: source
+        env:
+          APPJUICE_BUNDLE_OFFLINE: "0"
+          UNIAPP_BUNDLE_OFFLINE: "0"
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          APPIMAGETOOL: /tmp/appimagetool
+        run: pnpm bundle:electron-linux-appimage -- --output-root "$RUNNER_TEMP/electron-linux"
 
       - name: Build macOS Electron dmg
         if: runner.os == 'macOS'
@@ -153,9 +176,11 @@ jobs:
           if [ "${{ runner.os }}" = "macOS" ]; then
             cp artifacts/electron-macos/AppJuice-Electron-*.dmg "$TARGET"
             cp artifacts/electron-macos/AppJuice-Electron-*.zip "$RELEASE_DIR/${{ matrix.update_asset_name }}"
-          elif [ "${{ runner.os }}" = "Linux" ]; then
+          elif [[ "${{ matrix.id }}" == linux-server-* ]]; then
             cp "$RUNNER_TEMP/linux-server-release/${{ matrix.asset_name }}" "$TARGET"
             cp "$RUNNER_TEMP/linux-server-release/SHA256SUMS" "$RELEASE_DIR/SHA256SUMS.${{ matrix.arch }}"
+          elif [[ "${{ matrix.id }}" == linux-desktop-* ]]; then
+            cp "$RUNNER_TEMP/electron-linux/${{ matrix.asset_name }}" "$TARGET"
           fi
 
           printf 'asset_path=%s\n' "$TARGET" >> "$GITHUB_OUTPUT"
