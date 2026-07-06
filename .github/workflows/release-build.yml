@@ -41,6 +41,16 @@ jobs:
             arch: arm64
             asset_name: AppJuice-macOS-arm64.dmg
             update_asset_name: AppJuice-macOS-arm64.zip
+          - id: linux-server-x64
+            os: ubuntu-22.04
+            arch: x64
+            asset_name: AppJuice-Linux-x64.tar.gz
+            update_asset_name: ""
+          - id: linux-server-arm64
+            os: ubuntu-22.04-arm
+            arch: arm64
+            asset_name: AppJuice-Linux-arm64.tar.gz
+            update_asset_name: ""
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 360
@@ -115,6 +125,14 @@ jobs:
           APPLE_NOTARY_KEYCHAIN_PROFILE: appjuice-notary
         run: ./scripts/ci/setup-macos-signing.sh
 
+      - name: Build Linux server bundle
+        if: runner.os == 'Linux'
+        working-directory: source
+        env:
+          APPJUICE_BUNDLE_OFFLINE: "0"
+          UNIAPP_BUNDLE_OFFLINE: "0"
+        run: pnpm bundle:linux-server -- --output-root "$RUNNER_TEMP/linux-server-release" --platform linux --arch "${{ matrix.arch }}"
+
       - name: Build macOS Electron dmg
         if: runner.os == 'macOS'
         working-directory: source
@@ -135,6 +153,9 @@ jobs:
           if [ "${{ runner.os }}" = "macOS" ]; then
             cp artifacts/electron-macos/AppJuice-Electron-*.dmg "$TARGET"
             cp artifacts/electron-macos/AppJuice-Electron-*.zip "$RELEASE_DIR/${{ matrix.update_asset_name }}"
+          elif [ "${{ runner.os }}" = "Linux" ]; then
+            cp "$RUNNER_TEMP/linux-server-release/${{ matrix.asset_name }}" "$TARGET"
+            cp "$RUNNER_TEMP/linux-server-release/SHA256SUMS" "$RELEASE_DIR/SHA256SUMS.${{ matrix.arch }}"
           fi
 
           printf 'asset_path=%s\n' "$TARGET" >> "$GITHUB_OUTPUT"
@@ -212,6 +233,16 @@ jobs:
           pattern: release-*
           merge-multiple: true
           path: release-assets
+
+      - name: Merge Linux checksums
+        shell: bash
+        run: |
+          shopt -s nullglob
+          checksum_parts=(release-assets/SHA256SUMS.*)
+          if [ "${#checksum_parts[@]}" -gt 0 ]; then
+            cat "${checksum_parts[@]}" | sort -k 2 > release-assets/SHA256SUMS
+            rm -f "${checksum_parts[@]}"
+          fi
 
       - name: Publish GitHub release
         shell: bash
