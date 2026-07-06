@@ -122,6 +122,13 @@ jobs:
         working-directory: source
         run: pnpm install --frozen-lockfile
 
+      - name: Install Linux smoke dependencies
+        if: startsWith(matrix.id, 'linux-desktop-')
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
       - name: Set up Apple signing credentials
         if: runner.os == 'macOS'
         working-directory: source
@@ -165,6 +172,17 @@ jobs:
           APPIMAGE_EXTRACT_AND_RUN: "1"
           APPIMAGETOOL: /tmp/appimagetool
         run: pnpm bundle:electron-linux-appimage -- --output-root "$RUNNER_TEMP/electron-linux"
+
+      - name: Smoke test Linux Electron AppImage
+        if: startsWith(matrix.id, 'linux-desktop-')
+        working-directory: source
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: |
+          xvfb-run -a --server-args="-screen 0 1280x800x24" \
+            node scripts/smoke-test-electron-appimage.mjs \
+            "$RUNNER_TEMP/electron-linux/${{ matrix.asset_name }}" \
+            -- --disable-gpu
 
       - name: Build macOS Electron dmg
         if: runner.os == 'macOS'
