@@ -56,6 +56,11 @@ jobs:
             arch: x64
             asset_name: AppJuice-Linux-x64.AppImage
             update_asset_name: ""
+          - id: linux-desktop-arm64
+            os: ubuntu-22.04-arm
+            arch: arm64
+            asset_name: AppJuice-Linux-arm64.AppImage
+            update_asset_name: ""
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 360
@@ -142,8 +147,13 @@ jobs:
         if: startsWith(matrix.id, 'linux-desktop-')
         shell: bash
         run: |
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            TOOL_ARCH="aarch64"
+          else
+            TOOL_ARCH="x86_64"
+          fi
           curl -fsSL -o /tmp/appimagetool \
-            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+            "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${TOOL_ARCH}.AppImage"
           chmod +x /tmp/appimagetool
 
       - name: Build Linux Electron AppImage
