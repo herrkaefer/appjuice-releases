@@ -182,6 +182,7 @@ jobs:
           xvfb-run -a --server-args="-screen 0 1280x800x24" \
             node scripts/smoke-test-electron-appimage.mjs \
             "$RUNNER_TEMP/electron-linux/${{ matrix.asset_name }}" \
+            --test-app-lifecycle \
             -- --disable-gpu
 
       - name: Build macOS Electron dmg
