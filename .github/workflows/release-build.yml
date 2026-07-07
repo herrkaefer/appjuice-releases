@@ -163,7 +163,7 @@ jobs:
             "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${TOOL_ARCH}.AppImage"
           chmod +x /tmp/appimagetool
 
-      - name: Build Linux Electron AppImage
+      - name: Build Linux Electron desktop packages
         if: startsWith(matrix.id, 'linux-desktop-')
         working-directory: source
         env:
@@ -171,7 +171,7 @@ jobs:
           UNIAPP_BUNDLE_OFFLINE: "0"
           APPIMAGE_EXTRACT_AND_RUN: "1"
           APPIMAGETOOL: /tmp/appimagetool
-        run: pnpm bundle:electron-linux-appimage -- --output-root "$RUNNER_TEMP/electron-linux"
+        run: pnpm bundle:electron-linux-desktop -- --output-root "$RUNNER_TEMP/electron-linux"
 
       - name: Smoke test Linux Electron AppImage
         if: startsWith(matrix.id, 'linux-desktop-')
@@ -210,6 +210,8 @@ jobs:
             cp "$RUNNER_TEMP/linux-server-release/SHA256SUMS" "$RELEASE_DIR/SHA256SUMS.${{ matrix.arch }}"
           elif [[ "${{ matrix.id }}" == linux-desktop-* ]]; then
             cp "$RUNNER_TEMP/electron-linux/${{ matrix.asset_name }}" "$TARGET"
+            cp "$RUNNER_TEMP/electron-linux/AppJuice-Linux-${{ matrix.arch }}.deb" "$RELEASE_DIR/AppJuice-Linux-${{ matrix.arch }}.deb"
+            cp "$RUNNER_TEMP/electron-linux/install-linux-desktop.sh" "$RELEASE_DIR/install-linux-desktop.sh"
           fi
 
           printf 'asset_path=%s\n' "$TARGET" >> "$GITHUB_OUTPUT"
