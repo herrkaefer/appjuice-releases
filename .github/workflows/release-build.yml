@@ -41,26 +41,29 @@ jobs:
             arch: arm64
             asset_name: AppJuice-macOS-arm64.dmg
             update_asset_name: AppJuice-macOS-arm64.zip
-          - id: linux-server-x64
-            os: ubuntu-22.04
-            arch: x64
-            asset_name: AppJuice-Linux-x64.tar.gz
-            update_asset_name: ""
-          - id: linux-server-arm64
-            os: ubuntu-22.04-arm
-            arch: arm64
-            asset_name: AppJuice-Linux-arm64.tar.gz
-            update_asset_name: ""
-          - id: linux-desktop-x64
-            os: ubuntu-22.04
-            arch: x64
-            asset_name: AppJuice-Linux-x64.AppImage
-            update_asset_name: ""
-          - id: linux-desktop-arm64
-            os: ubuntu-22.04-arm
-            arch: arm64
-            asset_name: AppJuice-Linux-arm64.AppImage
-            update_asset_name: ""
+          # Temporarily disabled for the macOS-only release line. Re-enable these
+          # matrix entries when Linux desktop and Hostless release assets are ready
+          # to publish again.
+          # - id: linux-server-x64
+          #   os: ubuntu-22.04
+          #   arch: x64
+          #   asset_name: AppJuice-Linux-x64.tar.gz
+          #   update_asset_name: ""
+          # - id: linux-server-arm64
+          #   os: ubuntu-22.04-arm
+          #   arch: arm64
+          #   asset_name: AppJuice-Linux-arm64.tar.gz
+          #   update_asset_name: ""
+          # - id: linux-desktop-x64
+          #   os: ubuntu-22.04
+          #   arch: x64
+          #   asset_name: AppJuice-Linux-x64.AppImage
+          #   update_asset_name: ""
+          # - id: linux-desktop-arm64
+          #   os: ubuntu-22.04-arm
+          #   arch: arm64
+          #   asset_name: AppJuice-Linux-arm64.AppImage
+          #   update_asset_name: ""
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 360
