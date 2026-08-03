@@ -26,7 +26,74 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
+  compile_macos_icon:
+    runs-on: macos-26
+
+    steps:
+      - name: Resolve source ref
+        id: source
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.source_ref }}" ]; then
+            printf 'ref=%s\n' "${{ inputs.source_ref }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ github.event.client_payload.source_ref }}" ]; then
+            printf 'ref=%s\n' "${{ github.event.client_payload.source_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            printf 'ref=%s\n' "master" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve source repo token
+        id: source_token
+        shell: bash
+        env:
+          APPJUICE_REPO_TOKEN: ${{ secrets.APPJUICE_REPO_TOKEN }}
+          UNIAPP_REPO_TOKEN: ${{ secrets.UNIAPP_REPO_TOKEN }}
+        run: |
+          TOKEN="$APPJUICE_REPO_TOKEN"
+          if [ -z "$TOKEN" ]; then
+            TOKEN="$UNIAPP_REPO_TOKEN"
+          fi
+
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Missing APPJUICE_REPO_TOKEN or UNIAPP_REPO_TOKEN secret with read access to herrkaefer/appjuice"
+            exit 1
+          fi
+
+          printf 'token=%s\n' "$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Check out AppJuice source
+        uses: actions/checkout@v6
+        with:
+          repository: herrkaefer/appjuice
+          ref: ${{ steps.source.outputs.ref }}
+          token: ${{ steps.source_token.outputs.token }}
+          path: source
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.14.1
+
+      - name: Select the hybrid-icon compiler toolchain
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_26.0.1.app/Contents/Developer
+          xcodebuild -version
+
+      - name: Compile Tahoe Icon Composer assets
+        working-directory: source
+        run: |
+          node scripts/build-macos-icon-assets.mjs \
+            --output-dir "$RUNNER_TEMP/appjuice-macos-icon-assets"
+
+      - name: Upload Tahoe Icon Composer assets
+        uses: actions/upload-artifact@v6
+        with:
+          name: appjuice-macos-icon-assets
+          path: ${{ runner.temp }}/appjuice-macos-icon-assets
+          retention-days: 3
+
   build:
+    needs: compile_macos_icon
     strategy:
       fail-fast: false
       matrix:
@@ -107,6 +174,13 @@ jobs:
           ref: ${{ steps.source.outputs.ref }}
           token: ${{ steps.source_token.outputs.token }}
           path: source
+
+      - name: Download Tahoe Icon Composer assets
+        if: runner.os == 'macOS'
+        uses: actions/download-artifact@v6
+        with:
+          name: appjuice-macos-icon-assets
+          path: ${{ runner.temp }}/appjuice-macos-icon-assets
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -202,6 +276,7 @@ jobs:
         env:
           APPJUICE_BUNDLE_OFFLINE: "0"
           UNIAPP_BUNDLE_OFFLINE: "0"
+          APPJUICE_MAC_ICON_ASSETS_DIR: ${{ runner.temp }}/appjuice-macos-icon-assets
         run: pnpm bundle:electron-macos-dmg
 
       - name: Stage release asset
