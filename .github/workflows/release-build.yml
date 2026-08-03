@@ -32,12 +32,12 @@ jobs:
       matrix:
         include:
           - id: macos-x64
-            os: macos-15-intel
+            os: macos-26-intel
             arch: x64
             asset_name: AppJuice-macOS-x64.dmg
             update_asset_name: AppJuice-macOS-x64.zip
           - id: macos-arm64
-            os: macos-15
+            os: macos-26
             arch: arm64
             asset_name: AppJuice-macOS-arm64.dmg
             update_asset_name: AppJuice-macOS-arm64.zip
