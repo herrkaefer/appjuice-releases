@@ -153,6 +153,14 @@ jobs:
           UNIAPP_BUNDLE_OFFLINE: "0"
         run: pnpm bundle:linux-server -- --output-root "$RUNNER_TEMP/linux-server-release" --platform linux --arch "${{ matrix.arch }}"
 
+      - name: Smoke test Linux server bundle install
+        if: startsWith(matrix.id, 'linux-server-')
+        working-directory: source
+        run: |
+          node scripts/smoke-test-linux-server-bundle.mjs \
+            "$RUNNER_TEMP/linux-server-release/${{ matrix.asset_name }}" \
+            --sums "$RUNNER_TEMP/linux-server-release/SHA256SUMS"
+
       - name: Install AppImage tooling
         if: startsWith(matrix.id, 'linux-desktop-')
         shell: bash
