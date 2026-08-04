@@ -72,7 +72,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 24.14.1
+          node-version-file: source/.node-version
 
       - name: Select the hybrid-icon compiler toolchain
         run: |
@@ -185,14 +185,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 24.14.1
+          node-version-file: source/.node-version
 
       - name: Enable corepack pnpm
         shell: bash
         working-directory: source
         run: |
           corepack enable
-          corepack prepare pnpm@9.15.0 --activate
+          PACKAGE_MANAGER="$(node -p "require('./package.json').packageManager")"
+          corepack prepare "$PACKAGE_MANAGER" --activate
           pnpm --version
 
       - name: Install dependencies
