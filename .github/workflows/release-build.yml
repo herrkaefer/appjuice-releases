@@ -27,7 +27,10 @@ env:
 
 jobs:
   compile_macos_icon:
-    runs-on: macos-26
+    # Xcode 26.0.1 is available on the macOS 15 image. Keep the icon compiler
+    # on the same available runner family as the signed release builds; the
+    # macos-26 queue can remain unassigned and cancels the whole release.
+    runs-on: macos-15
 
     steps:
       - name: Resolve source ref
