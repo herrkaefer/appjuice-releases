@@ -27,10 +27,10 @@ env:
 
 jobs:
   compile_macos_icon:
-    # Xcode 26.0.1 is available on the macOS 15 image. Keep the icon compiler
-    # on the same available runner family as the signed release builds; the
-    # macos-26 queue can remain unassigned and cancels the whole release.
-    runs-on: macos-15
+    # Icon Composer stacks need the macOS 26 runner. The macOS 15 compiler can
+    # produce Assets.car, but it lacks the required IconImageStack data and the
+    # release validation correctly rejects it.
+    runs-on: macos-26
 
     steps:
       - name: Resolve source ref
