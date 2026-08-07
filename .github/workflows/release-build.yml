@@ -22,9 +22,6 @@ concurrency:
   group: appjuice-release-${{ github.event.inputs.release_tag || github.event.client_payload.release_tag || github.event.inputs.source_ref || github.event.client_payload.source_ref || github.run_id }}
   cancel-in-progress: false
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 jobs:
   compile_macos_icon:
     # Icon Composer stacks need the macOS 26 runner. The macOS 15 compiler can
@@ -180,7 +177,7 @@ jobs:
 
       - name: Download Tahoe Icon Composer assets
         if: runner.os == 'macOS'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: appjuice-macos-icon-assets
           path: ${{ runner.temp }}/appjuice-macos-icon-assets
