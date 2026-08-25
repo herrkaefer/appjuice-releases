@@ -23,7 +23,113 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate_source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Resolve source ref
+        id: source
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.source_ref }}" ]; then
+            printf 'ref=%s\n' "${{ inputs.source_ref }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ github.event.client_payload.source_ref }}" ]; then
+            printf 'ref=%s\n' "${{ github.event.client_payload.source_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            printf 'ref=%s\n' "master" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve source repo token
+        id: source_token
+        shell: bash
+        env:
+          APPJUICE_REPO_TOKEN: ${{ secrets.APPJUICE_REPO_TOKEN }}
+          UNIAPP_REPO_TOKEN: ${{ secrets.UNIAPP_REPO_TOKEN }}
+        run: |
+          TOKEN="$APPJUICE_REPO_TOKEN"
+          if [ -z "$TOKEN" ]; then
+            TOKEN="$UNIAPP_REPO_TOKEN"
+          fi
+
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Missing APPJUICE_REPO_TOKEN or UNIAPP_REPO_TOKEN secret with read access to herrkaefer/appjuice"
+            exit 1
+          fi
+
+          printf 'token=%s\n' "$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Check out AppJuice source
+        uses: actions/checkout@v6
+        with:
+          repository: herrkaefer/appjuice
+          ref: ${{ steps.source.outputs.ref }}
+          token: ${{ steps.source_token.outputs.token }}
+          path: source
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: source/.node-version
+
+      - name: Enable corepack pnpm
+        shell: bash
+        working-directory: source
+        run: |
+          corepack enable
+          PACKAGE_MANAGER="$(node -p "require('./package.json').packageManager")"
+          corepack prepare "$PACKAGE_MANAGER" --activate
+          pnpm --version
+
+      - name: Install dependencies
+        working-directory: source
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate release version
+        shell: bash
+        working-directory: source
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.release_tag }}" ]; then
+            TAG="${{ inputs.release_tag }}"
+          elif [ -n "${{ github.event.client_payload.release_tag }}" ]; then
+            TAG="${{ github.event.client_payload.release_tag }}"
+          else
+            TAG="v$VERSION"
+          fi
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::Release tag $TAG does not match source version v$VERSION"
+            exit 1
+          fi
+
+      - name: Validate user-facing release notes
+        working-directory: source
+        run: node scripts/release-notes.mjs check --target --future --evidence
+
+      - name: Typecheck release source
+        working-directory: source
+        run: |
+          pnpm --filter @appjuice/platform typecheck
+          pnpm --filter @appjuice/app-runtime typecheck
+          pnpm --filter @appjuice/frontend typecheck
+
+      - name: Test Electron Host
+        working-directory: source
+        run: pnpm test:electron-host
+
+      - name: Test release packaging scripts
+        working-directory: source
+        run: |
+          node --test \
+            scripts/build-electron-app.test.mjs \
+            scripts/smoke-test-macos-release-artifacts.test.mjs
+
+      - name: Build and smoke test release bundle
+        working-directory: source
+        run: node scripts/check-release-bundle.mjs
+
   compile_macos_icon:
+    needs: validate_source
     # Icon Composer stacks need the macOS 26 runner. The macOS 15 compiler can
     # produce Assets.car, but it lacks the required IconImageStack data and the
     # release validation correctly rejects it.
@@ -280,6 +386,26 @@ jobs:
           APPJUICE_MAC_ICON_ASSETS_DIR: ${{ runner.temp }}/appjuice-macos-icon-assets
         run: pnpm bundle:electron-macos-dmg
 
+      - name: Smoke test packaged macOS desktop startup
+        if: runner.os == 'macOS'
+        working-directory: source
+        run: |
+          node scripts/smoke-test-electron-appimage.mjs \
+            artifacts/electron-macos/AppJuice.app \
+            --timeout-ms 120000 \
+            --test-app-lifecycle \
+            -- --disable-gpu --use-mock-keychain
+
+      - name: Smoke test final macOS release artifacts
+        if: runner.os == 'macOS'
+        working-directory: source
+        run: |
+          node scripts/smoke-test-macos-release-artifacts.mjs \
+            --artifacts-dir artifacts/electron-macos \
+            --expected-version "$(node -p "require('./package.json').version")" \
+            --expected-arch "${{ matrix.arch }}" \
+            --timeout-ms 120000
+
       - name: Stage release asset
         id: release_asset
         shell: bash
@@ -292,6 +418,10 @@ jobs:
           if [ "${{ runner.os }}" = "macOS" ]; then
             cp artifacts/electron-macos/AppJuice-Electron-*.dmg "$TARGET"
             cp artifacts/electron-macos/AppJuice-Electron-*.zip "$RELEASE_DIR/${{ matrix.update_asset_name }}"
+            (
+              cd "$RELEASE_DIR"
+              shasum -a 256 "${{ matrix.asset_name }}" "${{ matrix.update_asset_name }}" > "SHA256SUMS.${{ matrix.arch }}"
+            )
           elif [[ "${{ matrix.id }}" == linux-server-* ]]; then
             cp "$RUNNER_TEMP/linux-server-release/${{ matrix.asset_name }}" "$TARGET"
             cp "$RUNNER_TEMP/linux-server-release/SHA256SUMS" "$RELEASE_DIR/SHA256SUMS.${{ matrix.arch }}"
@@ -385,7 +515,7 @@ jobs:
           merge-multiple: true
           path: release-assets
 
-      - name: Merge Linux checksums
+      - name: Merge release checksums
         shell: bash
         run: |
           shopt -s nullglob
@@ -471,10 +601,82 @@ jobs:
             "${PRERELEASE_FLAG[@]}"
 
       - name: Trigger website release history sync
+        id: website_sync
         shell: bash
         env:
           GH_TOKEN: ${{ steps.source_token.outputs.token }}
         run: |
+          printf 'not_before=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           gh api --method POST repos/herrkaefer/appjuice-site/dispatches \
             --raw-field "event_type=sync-release-history" \
             --raw-field "client_payload[release_tag]=${{ steps.release_meta.outputs.tag }}"
+
+      - name: Verify deployed website Release Notes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.source_token.outputs.token }}
+          RELEASE_TAG: ${{ steps.release_meta.outputs.tag }}
+          NOT_BEFORE: ${{ steps.website_sync.outputs.not_before }}
+        run: |
+          SYNC_RUN_ID=""
+          for attempt in $(seq 1 30); do
+            RUNS_JSON="$(gh run list \
+              -R herrkaefer/appjuice-site \
+              --workflow "Sync Release History" \
+              --event repository_dispatch \
+              --limit 20 \
+              --json databaseId,status,conclusion,createdAt)"
+            SYNC_RUN_ID="$(RUNS_JSON="$RUNS_JSON" NOT_BEFORE="$NOT_BEFORE" node -e '
+              const notBefore = Date.parse(process.env.NOT_BEFORE || "");
+              const runs = JSON.parse(process.env.RUNS_JSON || "[]");
+              const match = runs.find((run) => Date.parse(run.createdAt) >= notBefore);
+              process.stdout.write(match ? String(match.databaseId) : "");
+            ')"
+            if [ -n "$SYNC_RUN_ID" ]; then
+              break
+            fi
+            sleep 2
+          done
+          if [ -z "$SYNC_RUN_ID" ]; then
+            echo "::error::Timed out waiting for the website Release History sync workflow to start."
+            exit 1
+          fi
+
+          for attempt in $(seq 1 90); do
+            STATUS="$(gh run view "$SYNC_RUN_ID" -R herrkaefer/appjuice-site --json status,conclusion --jq '.status + ":" + (.conclusion // "")')"
+            case "$STATUS" in
+              completed:success) break ;;
+              completed:*)
+                echo "::error::Website Release History sync failed: $STATUS"
+                exit 1
+                ;;
+            esac
+            sleep 4
+          done
+          if [ "$STATUS" != "completed:success" ]; then
+            echo "::error::Timed out waiting for website Release History sync run $SYNC_RUN_ID."
+            exit 1
+          fi
+
+          HISTORY_PATH="$RUNNER_TEMP/release-history.json"
+          for attempt in $(seq 1 90); do
+            curl --fail --silent --show-error --retry 2 --retry-all-errors \
+              --connect-timeout 10 --max-time 30 \
+              --output "$HISTORY_PATH" \
+              "https://appjuice.app/guide/releases/releases.json" || true
+            if node -e '
+              const fs = require("node:fs");
+              try {
+                const history = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+                const version = String(process.argv[2] || "").replace(/^v/, "");
+                if (!history?.releases?.some((release) => release?.version === version)) process.exit(1);
+              } catch {
+                process.exit(1);
+              }
+            ' "$HISTORY_PATH" "$RELEASE_TAG"; then
+              exit 0
+            fi
+            sleep 4
+          done
+          echo "::error::The live Release Notes page did not include $RELEASE_TAG after its sync workflow completed."
+          exit 1
