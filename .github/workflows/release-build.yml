@@ -128,10 +128,7 @@ jobs:
 
       - name: Test release packaging scripts
         working-directory: source
-        run: |
-          node --test \
-            scripts/build-electron-app.test.mjs \
-            scripts/smoke-test-macos-release-artifacts.test.mjs
+        run: node --test scripts/smoke-test-macos-release-artifacts.test.mjs
 
       - name: Build and smoke test release bundle
         working-directory: source
@@ -193,6 +190,10 @@ jobs:
         run: |
           sudo xcode-select --switch /Applications/Xcode_26.0.1.app/Contents/Developer
           xcodebuild -version
+
+      - name: Test macOS release packaging scripts
+        working-directory: source
+        run: node --test scripts/build-electron-app.test.mjs
 
       - name: Compile Tahoe Icon Composer assets
         working-directory: source
