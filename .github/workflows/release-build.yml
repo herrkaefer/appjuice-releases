@@ -469,3 +469,12 @@ jobs:
             --version "${{ steps.release_meta.outputs.version }}" \
             --published-at "$PUBLISHED_AT" \
             "${PRERELEASE_FLAG[@]}"
+
+      - name: Trigger website release history sync
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.source_token.outputs.token }}
+        run: |
+          gh api --method POST repos/herrkaefer/appjuice-site/dispatches \
+            --raw-field "event_type=sync-release-history" \
+            --raw-field "client_payload[release_tag]=${{ steps.release_meta.outputs.tag }}"
