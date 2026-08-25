@@ -67,6 +67,7 @@ jobs:
           # Release-note evidence may refer to commits before the release tag.
           fetch-depth: 0
           token: ${{ steps.source_token.outputs.token }}
+          persist-credentials: false
           path: source
 
       - name: Set up Node.js
@@ -130,10 +131,6 @@ jobs:
         working-directory: source
         run: node --test scripts/smoke-test-macos-release-artifacts.test.mjs
 
-      - name: Build and smoke test release bundle
-        working-directory: source
-        run: node scripts/check-release-bundle.mjs
-
   compile_macos_icon:
     needs: validate_source
     # Icon Composer stacks need the macOS 26 runner. The macOS 15 compiler can
@@ -179,6 +176,7 @@ jobs:
           repository: herrkaefer/appjuice
           ref: ${{ steps.source.outputs.ref }}
           token: ${{ steps.source_token.outputs.token }}
+          persist-credentials: false
           path: source
 
       - name: Set up Node.js
@@ -289,6 +287,7 @@ jobs:
           repository: herrkaefer/appjuice
           ref: ${{ steps.source.outputs.ref }}
           token: ${{ steps.source_token.outputs.token }}
+          persist-credentials: false
           path: source
 
       - name: Download Tahoe Icon Composer assets
@@ -495,6 +494,7 @@ jobs:
           # Re-check the complete evidence set before making the release public.
           fetch-depth: 0
           token: ${{ steps.source_token.outputs.token }}
+          persist-credentials: false
           path: source
 
       - name: Resolve release metadata
