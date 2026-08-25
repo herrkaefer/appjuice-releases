@@ -111,8 +111,11 @@ jobs:
       - name: Typecheck release source
         working-directory: source
         run: |
-          pnpm --filter @appjuice/platform typecheck
+          # Platform typechecking imports the app-runtime declarations from
+          # its build output; create that clean-runner prerequisite first.
+          pnpm --filter @appjuice/app-runtime build
           pnpm --filter @appjuice/app-runtime typecheck
+          pnpm --filter @appjuice/platform typecheck
           pnpm --filter @appjuice/frontend typecheck
 
       - name: Test Electron Host
