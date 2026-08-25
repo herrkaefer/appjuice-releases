@@ -118,6 +118,10 @@ jobs:
           pnpm --filter @appjuice/platform typecheck
           pnpm --filter @appjuice/frontend typecheck
 
+      - name: Install Electron Host test dependencies
+        working-directory: source/host/electron
+        run: npm ci
+
       - name: Test Electron Host
         working-directory: source
         run: pnpm test:electron-host
