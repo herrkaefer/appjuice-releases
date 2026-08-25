@@ -64,6 +64,8 @@ jobs:
         with:
           repository: herrkaefer/appjuice
           ref: ${{ steps.source.outputs.ref }}
+          # Release-note evidence may refer to commits before the release tag.
+          fetch-depth: 0
           token: ${{ steps.source_token.outputs.token }}
           path: source
 
@@ -482,6 +484,8 @@ jobs:
         with:
           repository: herrkaefer/appjuice
           ref: ${{ steps.source.outputs.ref }}
+          # Re-check the complete evidence set before making the release public.
+          fetch-depth: 0
           token: ${{ steps.source_token.outputs.token }}
           path: source
 
