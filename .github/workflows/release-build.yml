@@ -367,8 +367,16 @@ jobs:
           else
             TAG="v$VERSION"
           fi
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::Release tag $TAG does not match source version v$VERSION"
+            exit 1
+          fi
           printf 'version=%s\n' "$VERSION" >> "$GITHUB_OUTPUT"
           printf 'tag=%s\n' "$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Validate user-facing release notes
+        working-directory: source
+        run: node scripts/release-notes.mjs check --target --future --evidence
 
       - name: Download staged release assets
         uses: actions/download-artifact@v8
@@ -431,7 +439,33 @@ jobs:
 
           if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             gh release upload "$TAG" release-assets/* --repo "$REPO" --clobber
-            gh release edit "$TAG" --repo "$REPO" --title "$TITLE" "${EDIT_LATEST_FLAG[@]}"
+            PUBLISHED_AT="$(gh release view "$TAG" --repo "$REPO" --json publishedAt --jq .publishedAt)"
+            PRERELEASE_FLAG=()
+            if [ "$(gh release view "$TAG" --repo "$REPO" --json isPrerelease --jq .isPrerelease)" = "true" ]; then
+              PRERELEASE_FLAG=("--prerelease")
+            fi
           else
-            gh release create "$TAG" release-assets/* --repo "$REPO" --title "$TITLE" --generate-notes "${CREATE_LATEST_FLAG[@]}"
+            PUBLISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            node source/scripts/release-notes.mjs render \
+              --notes-dir source/release-notes \
+              --version "${{ steps.release_meta.outputs.version }}" \
+              --published-at "$PUBLISHED_AT" \
+              --output release-notes.md
+            gh release create "$TAG" release-assets/* --repo "$REPO" --title "$TITLE" --notes-file release-notes.md "${CREATE_LATEST_FLAG[@]}"
+            PUBLISHED_AT="$(gh release view "$TAG" --repo "$REPO" --json publishedAt --jq .publishedAt)"
+            PRERELEASE_FLAG=()
           fi
+
+          node source/scripts/release-notes.mjs render \
+            --notes-dir source/release-notes \
+            --version "${{ steps.release_meta.outputs.version }}" \
+            --published-at "$PUBLISHED_AT" \
+            "${PRERELEASE_FLAG[@]}" \
+            --output release-notes.md
+          gh release edit "$TAG" --repo "$REPO" --title "$TITLE" --notes-file release-notes.md "${EDIT_LATEST_FLAG[@]}"
+          gh release view "$TAG" --repo "$REPO" --json body --jq .body > published-release-notes.md
+          node source/scripts/release-notes.mjs verify-public \
+            --input published-release-notes.md \
+            --version "${{ steps.release_meta.outputs.version }}" \
+            --published-at "$PUBLISHED_AT" \
+            "${PRERELEASE_FLAG[@]}"
