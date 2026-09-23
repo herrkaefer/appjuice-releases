@@ -75,6 +75,21 @@ jobs:
         with:
           node-version-file: source/.node-version
 
+      - name: Check out website before release builds
+        uses: actions/checkout@v6
+        with:
+          repository: herrkaefer/appjuice-site
+          ref: main
+          token: ${{ steps.source_token.outputs.token }}
+          persist-credentials: false
+          path: site
+
+      - name: Verify website can rebuild before release builds
+        working-directory: site
+        run: |
+          npm ci
+          npm run verify:web-build
+
       - name: Enable corepack pnpm
         shell: bash
         working-directory: source
