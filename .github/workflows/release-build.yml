@@ -518,6 +518,9 @@ jobs:
           fi
           bwrap --die-with-parent --unshare-user --unshare-pid --unshare-ipc --unshare-uts --unshare-net --ro-bind / / --dev /dev --proc /proc -- /bin/true
           pnpm install --frozen-lockfile
+      - name: Prepare managed hostless Chromium
+        working-directory: source
+        run: sh scripts/ci/prepare-coding-browser.sh
       - name: Check packages and deployment
         working-directory: source
         run: |
@@ -526,6 +529,8 @@ jobs:
           pnpm --filter @appjuice/app-runtime typecheck
           pnpm --filter @appjuice/frontend typecheck
           node --test --test-concurrency=1 scripts/cloud-service.test.mjs scripts/deploy-cloud-server.test.mjs scripts/install-linux.test.mjs
+          pnpm --filter @appjuice/platform test test/coding-browser-service.test.ts test/coding-browser-auth.test.ts test/chat-cdp-availability.test.ts test/host-cdp-service.test.ts test/server-coding-exec.test.ts
+          node --import ./packages/platform/node_modules/tsx/dist/loader.mjs --test scripts/pi-cdp-selection.test.ts
       - name: Build and verify hostless release
         working-directory: source
         env:
@@ -533,6 +538,7 @@ jobs:
         run: |
           pnpm bundle:linux-server
           VERSION="$(node -p 'require("./package.json").version')"
+          node "artifacts/esbuild-bundle/appjuice-$VERSION-linux-${{ matrix.arch }}/scripts/prepare-coding-browser.mjs" --root "artifacts/esbuild-bundle/appjuice-$VERSION-linux-${{ matrix.arch }}" --probe
           node scripts/smoke-test-esbuild-bundle.mjs --bundle-root "artifacts/esbuild-bundle/appjuice-$VERSION-linux-${{ matrix.arch }}"
           node scripts/smoke-test-linux-server-bundle.mjs artifacts/linux-server-release/AppJuice-Linux-${{ matrix.arch }}.tar.gz --sums artifacts/linux-server-release/SHA256SUMS
       - name: Stage public hostless assets
