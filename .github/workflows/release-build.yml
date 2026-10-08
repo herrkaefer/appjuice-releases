@@ -11,6 +11,11 @@ on:
         description: Optional release tag override (defaults to v<source version>)
         required: false
         default: ""
+      include_hostless:
+        description: Also publish tested native Linux hostless server archives and the cloud installer
+        type: boolean
+        required: false
+        default: false
   repository_dispatch:
     types:
       - publish-release
@@ -465,8 +470,89 @@ jobs:
           path: ${{ steps.release_asset.outputs.asset_dir }}/*
           retention-days: 3
 
+  hostless:
+    needs: validate_source
+    if: ${{ inputs.include_hostless == true || github.event.client_payload.include_hostless == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            os: ubuntu-24.04
+          - arch: arm64
+            os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - name: Resolve source ref
+        id: source
+        env:
+          SOURCE_REF: ${{ inputs.source_ref || github.event.client_payload.source_ref || 'master' }}
+        run: |
+          if [[ ! "$SOURCE_REF" =~ ^(v[0-9]+\.[0-9]+\.[0-9]+|[a-fA-F0-9]{40})$ ]]; then
+            echo "::error::Hostless publication requires a source version tag or full commit SHA. Use the source repository workflow for branch verification."
+            exit 1
+          fi
+          printf 'ref=%s\n' "$SOURCE_REF" >> "$GITHUB_OUTPUT"
+      - name: Check out AppJuice source
+        uses: actions/checkout@v6
+        with:
+          repository: herrkaefer/appjuice
+          ref: ${{ steps.source.outputs.ref }}
+          token: ${{ secrets.APPJUICE_REPO_TOKEN || secrets.UNIAPP_REPO_TOKEN }}
+          persist-credentials: false
+          path: source
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: source/.node-version
+      - name: Prepare native toolchain and real sandbox
+        working-directory: source
+        run: |
+          corepack enable
+          corepack prepare "$(node -p 'require("./package.json").packageManager')" --activate
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3 libcurl4-openssl-dev libexpat1-dev zlib1g-dev libsecret-1-dev bubblewrap zip unzip
+          if sudo aa-status --enabled 2>/dev/null; then
+            sudo install -m 644 templates/server/apparmor-appjuice-bwrap /etc/apparmor.d/appjuice-bwrap
+            sudo apparmor_parser -r /etc/apparmor.d/appjuice-bwrap
+          fi
+          bwrap --die-with-parent --unshare-user --unshare-pid --unshare-ipc --unshare-uts --unshare-net --ro-bind / / --dev /dev --proc /proc -- /bin/true
+          pnpm install --frozen-lockfile
+      - name: Check packages and deployment
+        working-directory: source
+        run: |
+          pnpm --filter @appjuice/app-runtime build
+          pnpm --filter @appjuice/platform typecheck
+          pnpm --filter @appjuice/app-runtime typecheck
+          pnpm --filter @appjuice/frontend typecheck
+          node --test --test-concurrency=1 scripts/cloud-service.test.mjs scripts/deploy-cloud-server.test.mjs scripts/install-linux.test.mjs
+      - name: Build and verify hostless release
+        working-directory: source
+        env:
+          APPJUICE_BUNDLE_OFFLINE: "0"
+        run: |
+          pnpm bundle:linux-server
+          VERSION="$(node -p 'require("./package.json").version')"
+          node scripts/smoke-test-esbuild-bundle.mjs --bundle-root "artifacts/esbuild-bundle/appjuice-$VERSION-linux-${{ matrix.arch }}"
+          node scripts/smoke-test-linux-server-bundle.mjs artifacts/linux-server-release/AppJuice-Linux-${{ matrix.arch }}.tar.gz --sums artifacts/linux-server-release/SHA256SUMS
+      - name: Stage public hostless assets
+        working-directory: source
+        run: |
+          mkdir -p "$RUNNER_TEMP/hostless-release"
+          cp artifacts/linux-server-release/AppJuice-Linux-${{ matrix.arch }}.tar.gz "$RUNNER_TEMP/hostless-release/"
+          cp artifacts/linux-server-release/deploy-cloud-server.sh "$RUNNER_TEMP/hostless-release/"
+          cp artifacts/linux-server-release/install-linux.sh "$RUNNER_TEMP/hostless-release/"
+          cp artifacts/linux-server-release/SHA256SUMS "$RUNNER_TEMP/hostless-release/SHA256SUMS.hostless-${{ matrix.arch }}"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release-hostless-${{ matrix.arch }}
+          path: ${{ runner.temp }}/hostless-release/*
+          retention-days: 3
+
   publish:
-    needs: build
+    needs: [build, hostless]
+    # The opt-in hostless job is skipped on normal Mac-only releases.
+    if: ${{ always() && !cancelled() && needs.build.result == 'success' && (needs.hostless.result == 'success' || needs.hostless.result == 'skipped') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -548,7 +634,7 @@ jobs:
           shopt -s nullglob
           checksum_parts=(release-assets/SHA256SUMS.*)
           if [ "${#checksum_parts[@]}" -gt 0 ]; then
-            cat "${checksum_parts[@]}" | sort -k 2 > release-assets/SHA256SUMS
+            cat "${checksum_parts[@]}" | sort -u -k 2 > release-assets/SHA256SUMS
             rm -f "${checksum_parts[@]}"
           fi
 
