@@ -530,6 +530,7 @@ jobs:
           pnpm --filter @appjuice/frontend typecheck
           node --test --test-concurrency=1 scripts/cloud-service.test.mjs scripts/deploy-cloud-server.test.mjs scripts/install-linux.test.mjs
           pnpm --filter @appjuice/platform test test/coding-browser-service.test.ts test/coding-browser-auth.test.ts test/chat-cdp-availability.test.ts test/host-cdp-service.test.ts test/server-coding-exec.test.ts
+          pnpm --filter @appjuice/platform test test/server-gateway.test.ts test/server-access-identity.test.ts test/server-accounts.test.ts
           node --import ./packages/platform/node_modules/tsx/dist/loader.mjs --test scripts/pi-cdp-selection.test.ts
           pnpm --filter @appjuice/frontend exec tsx --test test/coding-browser-exit.test.ts test/coding-event-stream-lifecycle.test.ts test/coding-session-window-state.test.ts
       - name: Build and verify hostless release
