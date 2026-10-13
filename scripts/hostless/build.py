@@ -135,6 +135,9 @@ def main():
         if platform.system() != 'Linux' or platform.machine() != {'x64': 'x86_64', 'arm64': 'aarch64'}[arch]:
             raise ValueError('Native runner required')
         age = install_age(private, arch)
+        canaries = {'stdout': 'PRIVATE_STDOUT_' + uuid.uuid4().hex, 'stderr': 'PRIVATE_STDERR_' + uuid.uuid4().hex}
+        (runner.directory / 'canaries.json').write_text(json.dumps(canaries))
+        runner.run('canary', [sys.executable, '-c', 'import sys;print(sys.argv[1]);print("::error::"+sys.argv[2],file=sys.stderr)', *canaries.values()])
         key = private / 'source-key'
         key.write_text(os.environ.pop('HOSTLESS_SOURCE_SSH_KEY').rstrip() + '\n')
         key.chmod(0o600)
@@ -151,9 +154,6 @@ def main():
             runner.run('checkout', ['git', '-C', str(source), 'checkout', '--quiet', '--detach', sha], env=env)
         finally:
             key.unlink(missing_ok=True)
-        canaries = {'stdout': 'PRIVATE_STDOUT_' + uuid.uuid4().hex, 'stderr': 'PRIVATE_STDERR_' + uuid.uuid4().hex}
-        (runner.directory / 'canaries.json').write_text(json.dumps(canaries))
-        runner.run('canary', [sys.executable, '-c', 'import sys;print(sys.argv[1]);print("::error::"+sys.argv[2],file=sys.stderr)', *canaries.values()])
         env = child_environment()
         env['HOSTLESS_ARCH'] = arch
         env['APPJUICE_BUNDLE_OFFLINE'] = '0'
