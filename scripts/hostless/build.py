@@ -167,8 +167,12 @@ def main():
         encrypt(age, recipient, inner, public / f'Hostless-Linux-{arch}.tar.age', runner)
         success = True
     except BaseException:
-        with runner.log.open('a') as log:
-            traceback.print_exc(file=log)
+        try:
+            with runner.log.open('a') as log:
+                traceback.print_exc(file=log)
+        except BaseException:
+            # A full disk or log-write failure must not send a traceback to Actions.
+            pass
         print('Hostless build did not complete; raw diagnostics remain confidential.', flush=True)
     finally:
         failed_phase = None if success else runner.phase
@@ -192,7 +196,11 @@ def main():
             shutil.rmtree(public)
             public.mkdir()
             print('Encrypted output preparation failed; no files will be uploaded.', flush=True)
-        shutil.rmtree(private)
+        try:
+            shutil.rmtree(private)
+        except BaseException:
+            success = False
+            print('Confidential workspace cleanup failed; ephemeral runner teardown is required.', flush=True)
     return 0 if success else 1
 
 
