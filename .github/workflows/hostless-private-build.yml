@@ -1,0 +1,58 @@
+name: Build encrypted Hostless packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Full AppJuice commit SHA reachable from its trusted master branch
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hostless-encrypted-${{ inputs.source_sha }}
+  cancel-in-progress: false
+
+jobs:
+  hostless:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            os: ubuntu-24.04
+          - arch: arm64
+            os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - name: Check out public orchestration only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Select public pinned runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.20.0'
+          # No Actions cache: the private source never enters a public cache.
+      - name: Build and verify with confidential output
+        env:
+          HOSTLESS_SOURCE_SHA: ${{ inputs.source_sha }}
+          HOSTLESS_SOURCE_SSH_KEY: ${{ secrets.HOSTLESS_SOURCE_SSH_KEY }}
+          HOSTLESS_AGE_RECIPIENT: ${{ vars.HOSTLESS_AGE_RECIPIENT }}
+          HOSTLESS_ARCH: ${{ matrix.arch }}
+        run: python3 scripts/hostless/build.py
+      - name: Upload encrypted allowlisted output only
+        if: ${{ always() && hashFiles('encrypted-output/receipt.json') != '' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: AppJuice-Hostless-Encrypted-${{ matrix.arch }}
+          path: |
+            encrypted-output/*.age
+            encrypted-output/receipt.json
+            encrypted-output/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
