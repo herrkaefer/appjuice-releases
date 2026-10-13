@@ -28,6 +28,11 @@ def digest(file):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def is_encrypted(file):
+    with Path(file).open('rb') as stream:
+        return stream.read(22) == b'age-encryption.org/v1\n'
+
+
 def child_environment():
     # Do not give source code workflow-command files or Actions credentials.
     return {key: value for key, value in os.environ.items()
@@ -74,7 +79,7 @@ def install_age(private, arch):
 
 def encrypt(age, recipient, plaintext, output, runner):
     runner.run('encrypt', [str(age), '-r', recipient, '-o', str(output), str(plaintext)])
-    if output.open('rb').read(22) != b'age-encryption.org/v1\n':
+    if not is_encrypted(output):
         raise ValueError('Invalid encrypted output')
 
 
@@ -105,7 +110,7 @@ def audit_public(directory, arch):
     for file in directory.iterdir():
         if file.is_symlink() or not file.is_file():
             raise ValueError('Unexpected public file type')
-        if file.name.endswith('.age') and file.open('rb').read(22) != b'age-encryption.org/v1\n':
+        if file.name.endswith('.age') and not is_encrypted(file):
             raise ValueError('Plaintext in public output')
     receipt = json.loads((directory / 'receipt.json').read_text())
     if set(receipt) != {'schemaVersion', 'sourceCommit', 'arch', 'version', 'status', 'failedPhase', 'encryptedFiles'}:
@@ -131,7 +136,7 @@ def main():
             raise ValueError('Native runner required')
         age = install_age(private, arch)
         key = private / 'source-key'
-        key.write_text(os.environ.pop('HOSTLESS_SOURCE_SSH_KEY'))
+        key.write_text(os.environ.pop('HOSTLESS_SOURCE_SSH_KEY').rstrip() + '\n')
         key.chmod(0o600)
         hosts = private / 'known_hosts'
         hosts.write_text(GITHUB_HOST_KEY)
