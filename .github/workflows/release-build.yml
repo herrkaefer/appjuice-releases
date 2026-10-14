@@ -144,7 +144,7 @@ jobs:
 
       - name: Test release packaging scripts
         working-directory: source
-        run: node --test scripts/smoke-test-macos-release-artifacts.test.mjs
+        run: node --test scripts/build-electron-app.test.mjs scripts/smoke-test-macos-release-artifacts.test.mjs
 
   compile_macos_icon:
     needs: validate_source
@@ -627,64 +627,48 @@ jobs:
             --published-at "$PUBLISHED_AT" \
             "${PRERELEASE_FLAG[@]}"
 
-      - name: Trigger website release history sync
-        id: website_sync
+      - name: Check out website for release history sync
+        uses: actions/checkout@v6
+        with:
+          repository: herrkaefer/appjuice-site
+          ref: main
+          token: ${{ steps.source_token.outputs.token }}
+          path: site
+
+      - name: Generate and commit website release history
+        working-directory: site
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.source_token.outputs.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release_meta.outputs.tag }}
         run: |
-          printf 'not_before=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-          gh api --method POST repos/herrkaefer/appjuice-site/dispatches \
-            --raw-field "event_type=sync-release-history" \
-            --raw-field "client_payload[release_tag]=${{ steps.release_meta.outputs.tag }}"
+          npm ci
+          npm run verify:web-build
+          node scripts/generate-release-history.mjs --expect-version "$RELEASE_TAG"
+          npm run test:web-worker
+          npm run typecheck:web
+          npm run build:web
+          node scripts/verify-release-history-snapshot.mjs --expect-version "$RELEASE_TAG"
+          git diff --check
+          RELEASE_PATHS=(
+            web-app/guide/releases/index.html
+            web-app/guide/releases/releases.json
+            web/guide/releases/index.html
+            web/guide/releases/releases.json
+          )
+          if [ -n "$(git status --porcelain -- "${RELEASE_PATHS[@]}" 'web/assets/guideReleases-*')" ]; then
+            git config user.name "appjuice-release-bot"
+            git config user.email "appjuice-release-bot@users.noreply.github.com"
+            git add -- "${RELEASE_PATHS[@]}" web/assets/guideReleases-*
+            git commit -m "Update release history for $RELEASE_TAG"
+            git push origin HEAD:main
+          fi
 
       - name: Verify deployed website Release Notes
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.source_token.outputs.token }}
           RELEASE_TAG: ${{ steps.release_meta.outputs.tag }}
-          NOT_BEFORE: ${{ steps.website_sync.outputs.not_before }}
         run: |
-          SYNC_RUN_ID=""
-          for attempt in $(seq 1 30); do
-            RUNS_JSON="$(gh run list \
-              -R herrkaefer/appjuice-site \
-              --workflow "Sync Release History" \
-              --event repository_dispatch \
-              --limit 20 \
-              --json databaseId,status,conclusion,createdAt)"
-            SYNC_RUN_ID="$(RUNS_JSON="$RUNS_JSON" NOT_BEFORE="$NOT_BEFORE" node -e '
-              const notBefore = Date.parse(process.env.NOT_BEFORE || "");
-              const runs = JSON.parse(process.env.RUNS_JSON || "[]");
-              const match = runs.find((run) => Date.parse(run.createdAt) >= notBefore);
-              process.stdout.write(match ? String(match.databaseId) : "");
-            ')"
-            if [ -n "$SYNC_RUN_ID" ]; then
-              break
-            fi
-            sleep 2
-          done
-          if [ -z "$SYNC_RUN_ID" ]; then
-            echo "::error::Timed out waiting for the website Release History sync workflow to start."
-            exit 1
-          fi
-
-          for attempt in $(seq 1 90); do
-            STATUS="$(gh run view "$SYNC_RUN_ID" -R herrkaefer/appjuice-site --json status,conclusion --jq '.status + ":" + (.conclusion // "")')"
-            case "$STATUS" in
-              completed:success) break ;;
-              completed:*)
-                echo "::error::Website Release History sync failed: $STATUS"
-                exit 1
-                ;;
-            esac
-            sleep 4
-          done
-          if [ "$STATUS" != "completed:success" ]; then
-            echo "::error::Timed out waiting for website Release History sync run $SYNC_RUN_ID."
-            exit 1
-          fi
-
           HISTORY_PATH="$RUNNER_TEMP/release-history.json"
           for attempt in $(seq 1 90); do
             curl --fail --silent --show-error --retry 2 --retry-all-errors \
@@ -705,5 +689,5 @@ jobs:
             fi
             sleep 4
           done
-          echo "::error::The live Release Notes page did not include $RELEASE_TAG after its sync workflow completed."
+          echo "::error::The live Release Notes page did not include $RELEASE_TAG after its snapshot was committed."
           exit 1
