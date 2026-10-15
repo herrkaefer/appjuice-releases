@@ -274,6 +274,21 @@ restore a backup over live work without explicit direction.
 
 Protect backups of `/var/lib/appjuice`, `/etc/appjuice` (including the key/connector
 material), deployment state, relevant systemd units and `/home/appjuice/.gitconfig`.
+For an isolated restore proof, verify the selected protected backup, then extract
+its storage archive with `tarfile.data_filter` into a new private directory. Omit
+`appjuice/run` and the derived `appjuice/apps/node_modules` link; Platform recreates
+these runtime links for the restored location. Preserve the rest of the App/config
+bytes and ownership. Copy the backed-up server environment privately, retain its
+wrapping key, and explicitly change `APPJUICE_STORAGE_ROOT`, `SERVER_PORT`,
+`APPJUICE_APP_SERVER_PORT` and `APPJUICE_GATEWAY_PORT` to isolated storage and unused
+loopback ports. Start a temporary service with the same service user, sandbox
+properties and verified program. Check both local health endpoints, anonymous
+Gateway rejection, account records, conversation history and artifact hashes.
+Stop the temporary service and delete its test-only storage/configuration after
+recording sanitized results; it can contain copied Provider credentials. Do not
+replace the live data, change its key, expose the restore publicly or count an
+archive listing alone as a successful restore.
+
 Maintain an off-device protected copy and retention policy. Inspect
 `journalctl -u appjuice-cloud` and root-only deployment `operations.log` locally;
 do not forward raw diagnostics or credentials into public reports.
