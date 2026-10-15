@@ -261,6 +261,10 @@ It then explicitly requests remaining human/browser checks:
 
 - Complete administrator OTP/SSO and verify the account/hostname.
 - Configure a Provider and complete a real Runtime Agent turn with saved history.
+  Create, read and hash a small known file; independently compare the published
+  artifact bytes/hash with the expected input. Verify its browser preview and
+  reopen the saved conversation after a service restart. A successful Agent reply
+  alone is insufficient; account for an explicitly requested trailing newline.
 - Import/start an App; verify approved file read/write and protected commands,
   denied outside-grant access, Coding/Tweak and the managed browser.
 - Add an ordinary account, verify its real login, Use/Develop/App grants and
