@@ -67,14 +67,15 @@ def install_age(private, arch):
         raise ValueError('Encryption tool checksum mismatch')
     with tarfile.open(archive) as tar:
         # Tool-only allowlist: no arbitrary archive paths or links.
-        member = tar.getmember('age/age')
-        if not member.isfile():
-            raise ValueError('Invalid encryption tool')
-        age = private / 'age'
-        with age.open('wb') as output:
-            shutil.copyfileobj(tar.extractfile(member), output)
-        age.chmod(0o700)
-    return age
+        for name in ['age', 'age-keygen']:
+            member = tar.getmember('age/' + name)
+            if not member.isfile():
+                raise ValueError('Invalid encryption tool')
+            binary = private / name
+            with binary.open('wb') as output:
+                shutil.copyfileobj(tar.extractfile(member), output)
+            binary.chmod(0o700)
+    return private / 'age'
 
 
 def encrypt(age, recipient, plaintext, output, runner):
@@ -158,6 +159,8 @@ def main():
             key.unlink(missing_ok=True)
         env = child_environment()
         env['HOSTLESS_ARCH'] = arch
+        env['HOSTLESS_TEST_AGE'] = str(age)
+        env['HOSTLESS_WRAPPER_SCRIPTS'] = str(Path(__file__).resolve().parent)
         env['APPJUICE_BUNDLE_OFFLINE'] = '0'
         runner.run('native-build', ['bash', str(Path(__file__).with_name('native-build.sh').resolve())], cwd=source, env=env)
         runner.phase = 'provenance'

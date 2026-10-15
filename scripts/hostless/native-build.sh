@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+python3 -m unittest discover -s "$HOSTLESS_WRAPPER_SCRIPTS" -p 'test_*.py'
+
 corepack enable
 corepack prepare "$(node -p 'require("./package.json").packageManager')" --activate
 
 sudo apt-get update
 sudo apt-get install -y build-essential python3 libcurl4-openssl-dev libexpat1-dev zlib1g-dev libsecret-1-dev bubblewrap zip unzip
-if sudo aa-status --enabled 2>/dev/null; then
+if ! bwrap --die-with-parent --unshare-user --unshare-pid --unshare-ipc --unshare-uts --unshare-net --ro-bind / / --dev /dev --proc /proc -- /bin/true 2>/dev/null; then
   sudo install -m 644 templates/server/apparmor-appjuice-bwrap /etc/apparmor.d/appjuice-bwrap
   sudo apparmor_parser -r /etc/apparmor.d/appjuice-bwrap
 fi
