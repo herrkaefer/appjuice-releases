@@ -60,6 +60,43 @@ router port forwarding. The Agent should diagnose missing dependencies and expla
 specific user actions; it must preserve global sandbox restrictions and unrelated
 Python/service configurations.
 
+## Agent-managed Cloudflare authorization
+
+Use the official [Cloudflare CLI](https://developers.cloudflare.com/cf/) from the
+verified `cf` npm package when no suitable authorized connector is available. The
+Agent can run it on its own machine with Node 22 or newer; it need not install
+Node or the CLI on the destination server. Use an isolated installation/profile
+with mode 0700 and a private log. For the tested CLI `1.0.0-beta.17`, request:
+
+```sh
+cf auth login --no-browser --scopes account:read zone:read dns.read dns.write argotunnel.read argotunnel.write access-app.read access-app.write access-policy.read access-policy.write access-idp.read access-org.read
+```
+
+The Agent opens the official device verification page, submits the current code,
+and checks the account and exact requested permissions. The user completes only
+required sign-in/MFA and the final authorization. Follow the tool's permission
+policy; never silently approve a new scope. `offline_access` is added by the CLI
+for refresh access. Explain that access can be revoked in Cloudflare's connected
+applications. Verify `cf auth whoami` without printing credential values.
+
+Discover the matching zone/account and the Access organization issuer through the
+authorized API. Do not ask the user to copy IDs. The CLI stores its OAuth profile
+under the selected configuration directory. Read that protected profile locally
+without logging it and provide only its short-lived access bearer to the
+root-owned `setupTokenFile` through authorized SSH/stdin or a protected transfer.
+Never transfer the refresh token to the server or put either token in command
+arguments, prompts, screenshots, reports or AppJuice's runtime environment.
+Refresh through the official CLI when necessary. Remove temporary setup bearer
+copies after provisioning; revoke the isolated connected-app session when testing
+is finished. Ordinary future account changes can be handled by an Agent through
+a fresh authorization; do not retain this broad setup session as a service token.
+
+If `cloudflared` is absent, the Agent installs it from
+[Cloudflare's signed package repository](https://pkg.cloudflare.com/) and verifies
+its executable before continuing. Dependency installation, file permissions,
+resource discovery and configuration are Agent tasks. A missing prerequisite is
+not a reason to hand the user terminal commands.
+
 ## Download and verify deployment tooling
 
 Resolve the index from the official public repository. Select a pinned version and
@@ -105,8 +142,11 @@ A 64-bit kernel with a 32-bit userland is unsupported. Omit `version` for the fi
 server version and validates the specification before any changes.
 
 JSON statuses are `ready`, `needs-user-action`, `unsupported`, `conflict` or
-`failed`; only `ready` exits with zero. Explain an action to the user, wait for its
-completion and repeat the same step. Never treat a paused human login as success.
+`failed`; only `ready` exits with zero. These are orchestration signals for the
+Agent. First handle technical prerequisites, inspect protected local diagnostics,
+and resolve safe retryable failures yourself. Ask the user only when their login,
+MFA, explicit consent or an unavailable decision is actually required. Then wait
+for that action and repeat the same step. Never treat a paused login as success.
 
 ## Configure, install and resume
 
