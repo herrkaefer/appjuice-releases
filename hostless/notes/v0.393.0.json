@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "version": "0.393.0",
+  "items": [
+    {
+      "type": "new",
+      "text": "Deploy AppJuice on Linux x64 or ARM64 with help from an Agent. The guided setup detects the machine, configures Cloudflare Access and Tunnel, and installs a verified server package. Initial supported systems are Ubuntu 24.04 x64 and Debian 12 ARM64, including compatible Raspberry Pi hardware. You complete required sign-in and authorization steps."
+    },
+    {
+      "type": "improved",
+      "text": "Installed Web apps have clearer icons and use the name AppJuice Web by default. Administrators can add an installation label while each App keeps its own name and icon."
+    },
+    {
+      "type": "fixed",
+      "text": "Runtime Agent file attachments are accepted correctly when uploaded to a conversation."
+    },
+    {
+      "type": "fixed",
+      "text": "Coding Agent commands work when a model leaves unused access fields empty. Automatic safety review retains your latest request across repeated tool attempts."
+    },
+    {
+      "type": "fixed",
+      "text": "Accounts that can only use shared Apps now see a clear access explanation when opening a development page."
+    }
+  ]
+}

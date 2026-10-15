@@ -112,9 +112,13 @@ and website documentation must not advertise a pending release as supported.
 
 `hostless-publish.yml` stages only a successful confidential candidate run matching
 committed `hostless/qualifications/vVERSION.json` and approved English public notes
-in `hostless/notes/vVERSION.md`. `prepare-release.py` checks exact source/version,
+in `hostless/notes/vVERSION.json`. `prepare-release.py` checks exact source/version,
 file allowlists, per-architecture identity and every required qualification check.
 Only tested systems enter the server index. The publisher uses a draft until all
 approved files are uploaded and advances the index after publication. Existing
 releases require reviewed checksum/asset merging and are refused by this narrow
 publisher. It does not check out private source or access raw diagnostics.
+
+The publisher accepts only reviewed public note fields, rejects private evidence,
+and renders the release-history marker with GitHub's actual publication timestamp.
+A Linux server release uses `--latest=false` and leaves desktop latest unchanged.

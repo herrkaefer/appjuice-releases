@@ -39,7 +39,7 @@ jobs:
           assert re.fullmatch(r'\d+\.\d+\.\d+',os.environ['VERSION'])
           assert re.fullmatch(r'\d+',os.environ['BUILD_RUN'])
           assert Path('hostless/qualifications/v'+os.environ['VERSION']+'.json').is_file()
-          assert Path('hostless/notes/v'+os.environ['VERSION']+'.md').is_file()
+          assert Path('hostless/notes/v'+os.environ['VERSION']+'.json').is_file()
           PY
       - name: Download audited candidates and stage approved files
         env:
@@ -69,9 +69,19 @@ jobs:
             echo 'Existing release requires reviewed asset/checksum merging; nothing published.'
             exit 1
           fi
-          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --draft --latest=false --title "AppJuice Server $VERSION" --notes-file "hostless/notes/v$VERSION.md"
+          python3 scripts/hostless/render-note.py --note "hostless/notes/v$VERSION.json" --version "$VERSION" --published-at "1970-01-01T00:00:00Z" --output draft-note.md
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --draft --latest=false --title "AppJuice Server $VERSION" --notes-file draft-note.md
           gh release upload "v$VERSION" approved/* --repo "$GITHUB_REPOSITORY"
           gh release edit "v$VERSION" --repo "$GITHUB_REPOSITORY" --draft=false --latest=false
+          gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,isPrerelease,publishedAt > release-metadata.json
+          python3 scripts/hostless/render-note.py --note "hostless/notes/v$VERSION.json" --version "$VERSION" --metadata release-metadata.json --output published-note.md
+          gh release edit "v$VERSION" --repo "$GITHUB_REPOSITORY" --latest=false --notes-file published-note.md
+          gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json body > published-body.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          assert json.load(open('published-body.json'))['body'] == Path('published-note.md').read_text()
+          PY
           cp approved/index.json hostless/index.json
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
