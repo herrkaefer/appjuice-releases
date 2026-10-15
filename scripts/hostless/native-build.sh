@@ -31,6 +31,7 @@ node --import ./packages/platform/node_modules/tsx/dist/loader.mjs --test script
 pnpm --filter @appjuice/frontend exec tsx --test test/coding-browser-exit.test.ts test/coding-event-stream-lifecycle.test.ts test/coding-session-window-state.test.ts test/chat-composer-keydown.test.ts test/coding-composer-layout.test.ts test/provider-brand-icon.test.ts
 pnpm --filter @appjuice/frontend exec tsx --test test/platform-update-placement.test.ts test/system-update-panel.test.ts test/hostless-server-panel.test.ts test/getting-started-navigation.test.ts test/app-install-guide-dialog.test.ts test/app-list-responsive-layout.test.ts test/platform-access.test.ts test/server-accounts.test.ts
 
+python3 -m unittest discover -s scripts/hostless -p 'test_*.py'
 pnpm bundle:linux-server
 BUNDLE="artifacts/esbuild-bundle/appjuice-$(node -p 'require("./package.json").version')-linux-$HOSTLESS_ARCH"
 node "$BUNDLE/scripts/prepare-coding-browser.mjs" --root "$BUNDLE" --probe

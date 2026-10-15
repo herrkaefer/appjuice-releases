@@ -125,6 +125,8 @@ def main():
     runner = PrivateRunner(private / 'diagnostics')
     age = None
     success = False
+    candidate = Path('release-output').resolve()
+    publishable = os.environ.get('HOSTLESS_RELEASE_CANDIDATE') == '1'
     version = None
     sha = os.environ.get('HOSTLESS_SOURCE_SHA', '')
     arch = os.environ.get('HOSTLESS_ARCH', '')
@@ -165,6 +167,21 @@ def main():
             for name in names:
                 tar.add(release / name, arcname=name, recursive=False)
         encrypt(age, recipient, inner, public / f'Hostless-Linux-{arch}.tar.age', runner)
+        if publishable:
+            # Source-owned audit runs with private output capture before any plaintext copy.
+            runner.run('provenance', [sys.executable, str(source / 'scripts/hostless/audit.py'), str(release / names[0])])
+            candidate.mkdir(exist_ok=False)
+            for name in [names[0], 'deploy-cloud-server.sh']:
+                shutil.copyfile(release / name, candidate / name)
+            for name in ['deploy.py', 'audit.py']:
+                shutil.copyfile(source / 'scripts/hostless' / name, candidate / name)
+            shutil.copyfile(source / 'docs/linux-server-deployment.md', candidate / 'deployment.md')
+            approved = {key: json.loads((release / 'hostless-release.json').read_text())[key]
+                        for key in ['schemaVersion', 'version', 'sourceCommit', 'arch', 'platform']}
+            (candidate / ('metadata-' + arch + '.json')).write_text(json.dumps(approved))
+            allowed = {names[0], 'deploy-cloud-server.sh', 'deploy.py', 'audit.py', 'deployment.md', 'metadata-' + arch + '.json'}
+            if {p.name for p in candidate.iterdir()} != allowed or any(p.is_symlink() or not p.is_file() for p in candidate.iterdir()):
+                raise ValueError('Unexpected release output')
         success = True
     except BaseException:
         try:
@@ -201,6 +218,8 @@ def main():
         except BaseException:
             success = False
             print('Confidential workspace cleanup failed; ephemeral runner teardown is required.', flush=True)
+    if not success and candidate.exists():
+        shutil.rmtree(candidate)
     return 0 if success else 1
 
 

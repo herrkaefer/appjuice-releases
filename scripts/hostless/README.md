@@ -89,3 +89,21 @@ removal, fixed phase labels, artifact allowlists, stale/dirty provenance, encryp
 failure diagnostics and rejection by an unrelated identity. This boundary trusts
 approved source commits and the runner/GitHub administrators. It is not a sandbox
 against deliberately malicious approved source or compromised dependencies.
+
+## Audited executable release candidates
+
+`release_candidate=true` additionally stages only the final source-concealed
+archive, minimal deployment scripts, approved guide and sanitized provenance.
+Private source, raw metadata/build logs and intermediates remain confidential.
+A source-owned recursive audit must pass inside the private output boundary first.
+If build, encryption, confidentiality or cleanup fails, candidate files are removed
+and the successful-candidate upload step is skipped. There is no public Actions cache.
+
+Native runners use Ubuntu 22.04 as the build baseline for Debian 12-compatible
+libc, with a separately selected Python 3.12 for safe archive inspection. Actual
+package/clean-target acceptance still decides supported distributions.
+
+Candidates are public executable distributions, distinct from encrypted operator
+artifacts. This option does not create a Release or mark systems supported.
+`hostless/index.json` remains pending until qualified publication. Public-wrapper
+and website documentation must not advertise a pending release as supported.

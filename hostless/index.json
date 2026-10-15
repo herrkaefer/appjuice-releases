@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "status": "pending",
+  "reason": "Native packages and clean-system deployment qualification must pass before a public server release is advertised."
+}

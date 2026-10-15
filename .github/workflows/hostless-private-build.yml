@@ -8,6 +8,12 @@ on:
         required: true
         type: string
 
+      release_candidate:
+        description: Also upload audited source-concealed candidate packages (not a Release)
+        required: false
+        default: false
+        type: boolean
+
 permissions:
   contents: read
 
@@ -22,9 +28,9 @@ jobs:
       matrix:
         include:
           - arch: x64
-            os: ubuntu-24.04
+            os: ubuntu-22.04
           - arch: arm64
-            os: ubuntu-24.04-arm
+            os: ubuntu-22.04-arm
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -37,12 +43,16 @@ jobs:
         with:
           node-version: '24.20.0'
           # No Actions cache: the private source never enters a public cache.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Build and verify with confidential output
         env:
           HOSTLESS_SOURCE_SHA: ${{ inputs.source_sha }}
           HOSTLESS_SOURCE_SSH_KEY: ${{ secrets.HOSTLESS_SOURCE_SSH_KEY }}
           HOSTLESS_AGE_RECIPIENT: ${{ vars.HOSTLESS_AGE_RECIPIENT }}
           HOSTLESS_ARCH: ${{ matrix.arch }}
+          HOSTLESS_RELEASE_CANDIDATE: ${{ inputs.release_candidate && '1' || '0' }}
         run: python3 scripts/hostless/build.py
       - name: Upload encrypted allowlisted output only
         if: ${{ always() && hashFiles('encrypted-output/receipt.json') != '' }}
@@ -53,6 +63,21 @@ jobs:
             encrypted-output/*.age
             encrypted-output/receipt.json
             encrypted-output/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+      - name: Upload audited executable candidates only
+        if: ${{ success() && inputs.release_candidate }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: AppJuice-Hostless-Candidate-${{ matrix.arch }}
+          path: |
+            release-output/AppJuice-Linux-${{ matrix.arch }}.tar.gz
+            release-output/deploy-cloud-server.sh
+            release-output/deploy.py
+            release-output/audit.py
+            release-output/deployment.md
+            release-output/metadata-${{ matrix.arch }}.json
           if-no-files-found: error
           retention-days: 1
           compression-level: 0
