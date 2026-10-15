@@ -1,5 +1,54 @@
 {
   "schemaVersion": 1,
-  "status": "pending",
-  "reason": "Native packages and clean-system deployment qualification must pass before a public server release is advertised."
+  "status": "published",
+  "version": "0.393.0",
+  "sourceCommit": "4f8b390151d8d6103ff0d27584583740c291caa2",
+  "supportedSystems": [
+    {
+      "os": "ubuntu",
+      "version": "24.04",
+      "arch": "x64"
+    },
+    {
+      "os": "debian",
+      "version": "12",
+      "arch": "arm64"
+    }
+  ],
+  "assets": {
+    "arm64": {
+      "archive": {
+        "url": "https://github.com/herrkaefer/appjuice-releases/releases/download/v0.393.0/AppJuice-Linux-arm64.tar.gz",
+        "sha256": "34213f3294d35891db404ad879b9957760760c956ee0ed3ebf9f36c070d971d8"
+      },
+      "installer": {
+        "url": "https://github.com/herrkaefer/appjuice-releases/releases/download/v0.393.0/deploy-cloud-server.sh",
+        "sha256": "fc5a6e4ceb21847a6bf749d29634a4de4368f446cf0a8d95d3e434f170b2643c"
+      }
+    },
+    "x64": {
+      "archive": {
+        "url": "https://github.com/herrkaefer/appjuice-releases/releases/download/v0.393.0/AppJuice-Linux-x64.tar.gz",
+        "sha256": "163b9eca0fd05d2cc108037216060d7ab5587813308958c2f14b865307130656"
+      },
+      "installer": {
+        "url": "https://github.com/herrkaefer/appjuice-releases/releases/download/v0.393.0/deploy-cloud-server.sh",
+        "sha256": "fc5a6e4ceb21847a6bf749d29634a4de4368f446cf0a8d95d3e434f170b2643c"
+      }
+    }
+  },
+  "tools": {
+    "deploy.py": {
+      "url": "https://github.com/herrkaefer/appjuice-releases/releases/download/v0.393.0/deploy.py",
+      "sha256": "98aa223b73661d62cf352f87c69ee62f2102202472e29fc1133b3cc6b55eab38"
+    },
+    "audit.py": {
+      "url": "https://github.com/herrkaefer/appjuice-releases/releases/download/v0.393.0/audit.py",
+      "sha256": "f88a47821c0b6178de82f3f036e6c74ac2a7cc31fb28246ecb27501348283c90"
+    },
+    "deployment.md": {
+      "url": "https://github.com/herrkaefer/appjuice-releases/releases/download/v0.393.0/deployment.md",
+      "sha256": "c292f6e926dd865427b67792e4a8612322f76700f1eca1dddd151d77c916a5da"
+    }
+  }
 }
