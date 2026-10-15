@@ -134,6 +134,8 @@ def configure(cf, spec, state, persist):
     policy = cf.api(account + '/access/policies/' + state['policyId'])
     if policy.get('name') != name or policy.get('decision') != 'allow' or policy.get('app_count', 0) > 1 or not policy.get('include') or not all(isinstance(rule, dict) and set(rule) == {'email'} and isinstance(rule['email'], dict) and set(rule['email']) == {'email'} and isinstance(rule['email']['email'], str) for rule in policy['include']):
         stop('conflict', 'Access policy is shared or belongs to another deployment.')
+    if spec['adminEmail'].lower() not in {rule['email']['email'].lower() for rule in policy['include']}:
+        stop('conflict', 'The administrator is no longer admitted by this deployment policy.')
     apps = listing(account + '/access/apps')
     apps = [a for a in apps if a.get('domain') == spec['hostname']]
     if len(apps) > 1: stop('conflict', 'Multiple Access applications match this hostname.')
@@ -144,7 +146,7 @@ def configure(cf, spec, state, persist):
              'policies':[{'id':state['policyId'], 'precedence':1}]})
         remember('appId', app['id'])
     app = cf.api(account + '/access/apps/' + state['appId'])
-    if app.get('domain') != spec['hostname'] or app.get('name') != name or not any(p.get('id') == state['policyId'] for p in app.get('policies', [])):
+    if app.get('domain') != spec['hostname'] or app.get('name') != name or len(app.get('policies', [])) != 1 or app['policies'][0].get('id') != state['policyId']:
         stop('conflict', 'Access application/policy association changed.')
     if state.get('audience', app['aud']) != app['aud']: stop('conflict', 'Access application audience changed.')
     remember('audience', app['aud'])
@@ -190,7 +192,10 @@ def command(args, log):
     if Path(log).is_symlink(): stop('conflict', 'Operations log must not be a symlink.')
     with open(log, 'ab') as output:
         os.chmod(log, 0o600)
-        subprocess.run(args, stdout=output, stderr=subprocess.STDOUT, check=True)
+        # Use this verified interpreter for installer subprocesses too. Debian's
+        # system Python may lack data_filter; never replace its OS executable.
+        env = {**os.environ, 'PATH':str(Path(sys.executable).parent) + os.pathsep + os.environ.get('PATH', os.defpath)}
+        subprocess.run(args, stdout=output, stderr=subprocess.STDOUT, check=True, env=env)
 
 def main():
     parser = argparse.ArgumentParser()

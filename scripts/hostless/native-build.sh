@@ -14,6 +14,12 @@ if ! bwrap --die-with-parent --unshare-user --unshare-pid --unshare-ipc --unshar
 fi
 bwrap --die-with-parent --unshare-user --unshare-pid --unshare-ipc --unshare-uts --unshare-net --ro-bind / / --dev /dev --proc /proc -- /bin/true
 
+# setup-node's official archive already contains matching headers. Native builds
+# should not depend on a second download from nodejs.org during node-gyp install.
+node_root="$(node -p 'require("node:path").dirname(require("node:path").dirname(process.execPath))')"
+if [[ -f "$node_root/include/node/node.h" ]]; then
+  export npm_config_nodedir="$node_root"
+fi
 pnpm install --frozen-lockfile
 sh scripts/ci/prepare-coding-browser.sh
 # Platform imports Runtime's generated exports on a clean checkout.

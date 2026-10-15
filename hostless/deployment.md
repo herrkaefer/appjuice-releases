@@ -183,6 +183,58 @@ security update or a scoped verified interpreter; never bypass safe extraction.
 Ubuntu namespace restrictions need the provided executable-specific AppArmor
 profiles, not a global security toggle or unsandboxed fallback.
 
+## Debian 12 deployment interpreter
+
+If `python3 -c 'import tarfile; assert hasattr(tarfile, "data_filter")'` fails,
+the Agent prepares an isolated interpreter. Do not replace `/usr/bin/python3`,
+change its alternatives, compile AppJuice, or remove the archive safety check.
+The following Agent-only bootstrap was tested in a clean Debian 12 ARM64 system:
+
+```python
+# Run with authorized root access; uses only the existing Python standard library.
+import hashlib, io, os, pathlib, platform, subprocess, tarfile, urllib.request
+assert os.geteuid() == 0
+arch = {"aarch64": "aarch64", "x86_64": "x86_64"}[platform.machine()]
+expected = {
+    "aarch64": "9041c73c99fdc5892cf128140beb354eca9231d502068cc36e6cb53a8e59ad14",
+    "x86_64": "eadd9d27c134ab5ac1ffd4473b97a741407f3ea238288f03121fc4deddf90220",
+}[arch]
+root = pathlib.Path("/opt/appjuice-deploy")
+assert not root.is_symlink()
+root.mkdir(mode=0o700, exist_ok=True)
+assert root.stat().st_uid == 0 and not root.stat().st_mode & 0o077
+name = "uv-" + arch + "-unknown-linux-gnu"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.1/" + name + ".tar.gz"
+with urllib.request.urlopen(url, timeout=120) as response:
+    data = response.read(64 * 1024 * 1024)
+assert hashlib.sha256(data).hexdigest() == expected
+# Copy only one verified regular file: no archive extraction API or link handling.
+with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
+    member = archive.getmember(name + "/uv")
+    assert member.isfile()
+    binary = archive.extractfile(member).read()
+uv = root / "uv"
+assert not uv.is_symlink()
+if uv.exists():
+    assert hashlib.sha256(uv.read_bytes()).digest() == hashlib.sha256(binary).digest()
+else:
+    with uv.open("xb") as output:
+        output.write(binary)
+    uv.chmod(0o700)
+subprocess.run([str(uv), "python", "install", "3.12.15", "--no-config", "--no-bin",
+    "--install-dir", str(root / "python"), "--cache-dir", str(root / "cache")], check=True)
+python = root / "python" / ("cpython-3.12.15-linux-" + arch + "-gnu") / "bin/python3.12"
+subprocess.run([str(python), "-c", "import tarfile; assert hasattr(tarfile, 'data_filter')"], check=True)
+print(python)
+```
+
+The pinned uv archive hashes are from the official Astral release. uv uses its
+managed Python distributions and checksums; keep TLS validation enabled. Use the
+printed absolute interpreter for every `deploy.py` step. The deployer propagates
+that interpreter's directory to installer subprocesses while leaving the OS Python
+untouched. Keep this directory root-owned and protected. This environment is for
+deployment tooling; it does not add a Python requirement to individual Apps.
+
 ## Acceptance and handover
 
 `verify` checks the exact service version, service policy, persisted administrator,
