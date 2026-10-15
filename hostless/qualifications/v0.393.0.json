@@ -1,0 +1,36 @@
+{
+  "version": "0.393.0",
+  "sourceCommit": "4f8b390151d8d6103ff0d27584583740c291caa2",
+  "buildRun": 38769778620,
+  "checks": {
+    "packagePrivacy": true,
+    "publicBuildPrivacy": true,
+    "cleanInstall": true,
+    "realLogin": true,
+    "agentWork": true,
+    "updateRestore": true,
+    "desktopRegression": true
+  },
+  "supportedSystems": [
+    {
+      "os": "ubuntu",
+      "version": "24.04",
+      "arch": "x64"
+    },
+    {
+      "os": "debian",
+      "version": "12",
+      "arch": "arm64"
+    }
+  ],
+  "archives": {
+    "x64": "163b9eca0fd05d2cc108037216060d7ab5587813308958c2f14b865307130656",
+    "arm64": "34213f3294d35891db404ad879b9957760760c956ee0ed3ebf9f36c070d971d8"
+  },
+  "evidence": {
+    "cleanInstall": "Both final unmodified archives installed on clean AppJuice targets; ARM64 used a fresh Debian root filesystem isolated on Raspberry Pi hardware. Service-user sandbox/browser probes and authenticated-gateway rejection passed. This does not claim a physical SD-card reinstall.",
+    "functionalBaseline": "Real administrator/ordinary login, Runtime/Coding Agent, permission revocation, update preservation, reboot and isolated restore were accepted with native build 38764104119. All 780 shipped AppJuice runtime/config/template/script files in each architecture match that baseline byte for byte (inventory a3d40a5684e5aae94ebef3cf9cce1c7383f5c5a3195d27b5e8ab886ae5391207). Seed App inner source bytes are unchanged. Build receipts and generated third-party build metadata/tool binaries differ.",
+    "privacy": "Both final archives passed recursive audit; public wrapper source archive and four artifact names checked; public CI log 107409 bytes passed selected source/key/map canary scans; Actions cache count zero. Raw diagnostics encrypted; private source and decryption identity excluded.",
+    "desktopRegression": "Shared packaged macOS audit and runtime smoke passed on the frozen release snapshot."
+  }
+}
