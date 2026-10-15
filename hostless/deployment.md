@@ -180,6 +180,21 @@ that key on retry/update. The setup API token is not written into AppJuice's run
 environment; keep or revoke it deliberately after setup. The optional narrower
 sync token remains server-only. The connector token has its own protected file.
 
+When automatic email-policy synchronization is not configured, the Agent maintains
+the dedicated Access policy when accounts change. Creating an ordinary account in
+AppJuice alone does not enable its Cloudflare login. Read the persisted `policyId`
+and `appId`, recheck the deployment name/hostname, the single policy association
+and exact-email-only Allow rules, then add the approved account email while
+preserving the administrator and other active accounts. Never replace an account
+policy with a shared or unrestricted rule. Verify the resulting email set before
+asking the user to sign in. On revocation, remove the account's App grants or
+disable it in AppJuice immediately, then remove its email from the dedicated
+policy. An existing Access session must still be denied by AppJuice's account
+checks; removing an edge email rule alone is not a complete session-revocation
+test. Keep the UI's manual-sign-in warning explicit in the handover, and perform
+these technical steps through authorized tools rather than asking the user to
+edit Cloudflare rules.
+
 At least 4 GiB staging headroom plus sufficient space for an existing-data backup
 is required. An older Python missing `tarfile.data_filter` needs a supported
 security update or a scoped verified interpreter; never bypass safe extraction.
