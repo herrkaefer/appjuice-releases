@@ -40,7 +40,11 @@ def inspect():
     supported = (platform.system() == 'Linux' and bits == '64' and
         ((arch == 'x64' and info.get('ID') == 'ubuntu' and info.get('VERSION_ID') == '24.04') or
          (arch == 'arm64' and info.get('ID') in ('debian', 'raspbian') and info.get('VERSION_ID') == '12')))
-    return {'status': 'ready' if supported else 'unsupported', 'arch': arch, 'userlandBits': bits,
+    memory = {}
+    try:
+        memory = dict(line.split(':', 1) for line in Path('/proc/meminfo').read_text().splitlines())
+    except OSError: pass
+    return {'availableMemory': memory.get('MemAvailable', '').strip(), 'status': 'ready' if supported else 'unsupported', 'arch': arch, 'userlandBits': bits,
         'os': info.get('ID'), 'osVersion': info.get('VERSION_ID'), 'libc': libc,
         'systemd': Path('/run/systemd/system').is_dir(), 'freeBytes': shutil.disk_usage('/').free,
         'installed': Path('/opt/appjuice/current').exists(),
@@ -84,6 +88,10 @@ def spec_read(path):
         stop('failed', 'allowTaskInterruption must be a boolean.')
     return spec
 
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise urllib.error.URLError('Redirect refused')
+
 class Cloudflare:
     def __init__(self, token): self.token = token
     def api(self, route, method='GET', body=None):
@@ -92,7 +100,7 @@ class Cloudflare:
             data=None if body is None else json.dumps(body).encode(), method=method,
             headers={'Authorization':'Bearer ' + self.token, 'Content-Type':'application/json'})
         try:
-            with urllib.request.urlopen(request, timeout=30) as response: result = json.load(response)
+            with urllib.request.build_opener(NoRedirect()).open(request, timeout=30) as response: result = json.load(response)
         except (urllib.error.URLError, ValueError): stop('needs-user-action', 'Cloudflare request failed. Check scoped token permissions and network; resume afterward.')
         if result.get('success') is not True: stop('needs-user-action', 'Cloudflare did not confirm the operation. Check permissions; resume afterward.')
         return result['result']
@@ -124,7 +132,7 @@ def configure(cf, spec, state, persist):
             {'name':name, 'decision':'allow', 'include':[{'email':{'email':spec['adminEmail'].lower()}}]})
         remember('policyId', p['id'])
     policy = cf.api(account + '/access/policies/' + state['policyId'])
-    if policy.get('name') != name or policy.get('decision') != 'allow' or policy.get('app_count', 0) > 1:
+    if policy.get('name') != name or policy.get('decision') != 'allow' or policy.get('app_count', 0) > 1 or not policy.get('include') or not all(isinstance(rule, dict) and set(rule) == {'email'} and isinstance(rule['email'], dict) and set(rule['email']) == {'email'} and isinstance(rule['email']['email'], str) for rule in policy['include']):
         stop('conflict', 'Access policy is shared or belongs to another deployment.')
     apps = listing(account + '/access/apps')
     apps = [a for a in apps if a.get('domain') == spec['hostname']]
@@ -138,6 +146,7 @@ def configure(cf, spec, state, persist):
     app = cf.api(account + '/access/apps/' + state['appId'])
     if app.get('domain') != spec['hostname'] or app.get('name') != name or not any(p.get('id') == state['policyId'] for p in app.get('policies', [])):
         stop('conflict', 'Access application/policy association changed.')
+    if state.get('audience', app['aud']) != app['aud']: stop('conflict', 'Access application audience changed.')
     remember('audience', app['aud'])
     providers = cf.api(account + '/access/identity_providers')
     if not any(p.get('type') == 'onetimepin' for p in providers):
@@ -189,6 +198,9 @@ def main():
     parser.add_argument('--spec')
     parser.add_argument('--state', default='/var/lib/appjuice-deploy/state.json')
     parser.add_argument('--index', default=INDEX)
+    parser.add_argument('--archive')
+    parser.add_argument('--sums')
+    parser.add_argument('--installer')
     args = parser.parse_args()
     report = inspect()
     if args.action == 'inspect': return report
@@ -196,11 +208,28 @@ def main():
         stop('unsupported', 'Use a supported 64-bit Linux/systemd target; see the deployment guide.')
     if not args.spec: stop('needs-user-action', 'Provide --spec with the deployment inputs described in the guide.')
     spec = spec_read(args.spec)
-    index = fetch_json(args.index)
-    version, assets = select_release(index, report['arch'])
-    row = {'os':report['os'], 'version':report['osVersion'], 'arch':report['arch']}
-    if row not in index.get('supportedSystems', []):
-        stop('unsupported', 'This OS/architecture has not passed this release qualification.')
+    version = spec.get('version', '')
+    index, assets = {}, {}
+    if args.action in ['plan', 'install']:
+        if args.archive:
+            if not args.sums or not args.installer or not re.fullmatch(r'[a-f0-9]{40}', spec.get('sourceCommit', '')):
+                stop('needs-user-action', 'Offline candidate testing requires --sums, --installer and the trusted sourceCommit in the specification.')
+            sums = Path(args.sums).read_text().splitlines()
+            assets = {}
+            for key, name, file in [('archive', 'AppJuice-Linux-'+report['arch']+'.tar.gz', args.archive), ('installer', 'deploy-cloud-server.sh', args.installer)]:
+                matches = [line.split()[0] for line in sums if len(line.split()) == 2 and line.split()[1] == name]
+                if len(matches) != 1 or not re.fullmatch('[a-f0-9]{64}', matches[0]): stop('failed', 'Missing unique offline checksum.')
+                assets[key] = {'url':Path(file).resolve().as_uri(), 'sha256':matches[0]}
+            index = {'sourceCommit':spec['sourceCommit']}
+        else:
+            index = fetch_json(args.index)
+            resolved, assets = select_release(index, report['arch'])
+            row = {'os':report['os'], 'version':report['osVersion'], 'arch':report['arch']}
+            if row not in index.get('supportedSystems', []):
+                stop('unsupported', 'This OS/architecture has not passed this release qualification.')
+            if version and version != resolved: stop('needs-user-action', 'Choose an index for the requested pinned server version.')
+            if args.action == 'plan': version = resolved
+    if not re.fullmatch(r'\d+\.\d+\.\d+', version): stop('needs-user-action', 'Record the planned version in the specification before changing this machine.')
     if args.action == 'plan': return {**report, 'version':version, 'hostname':spec['hostname'], 'next':'configure; install; verify'}
     if os.geteuid() != 0: stop('needs-user-action', 'Run mutation/verification steps with authorized sudo access.')
     import fcntl

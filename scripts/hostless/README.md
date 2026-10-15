@@ -107,3 +107,14 @@ Candidates are public executable distributions, distinct from encrypted operator
 artifacts. This option does not create a Release or mark systems supported.
 `hostless/index.json` remains pending until qualified publication. Public-wrapper
 and website documentation must not advertise a pending release as supported.
+
+## Qualified publication
+
+`hostless-publish.yml` stages only a successful confidential candidate run matching
+committed `hostless/qualifications/vVERSION.json` and approved English public notes
+in `hostless/notes/vVERSION.md`. `prepare-release.py` checks exact source/version,
+file allowlists, per-architecture identity and every required qualification check.
+Only tested systems enter the server index. The publisher uses a draft until all
+approved files are uploaded and advances the index after publication. Existing
+releases require reviewed checksum/asset merging and are refused by this narrow
+publisher. It does not check out private source or access raw diagnostics.

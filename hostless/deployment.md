@@ -38,15 +38,21 @@ It does not need access to AppJuice's private source repository.
 3. Your administrator email, admitted through the chosen Access login method.
    Email one-time PIN is the default. An existing identity provider may supply
    password/SSO/MFA login; AppJuice does not add a second password store.
-4. A scoped setup API token for the selected account/zone: Zone Read/DNS Edit,
-   Cloudflare Tunnel Edit, and Access applications/policies and identity-provider
-   read access as required by your account. Use Cloudflare's current token permission
-   names. A Global API Key is unnecessary. Keep the token in a mode-0600 file.
-5. Optionally, a distinct retained token restricted to Access Apps and Policies Edit
-   for automatic account-email synchronization. Without it, maintain Access's email
-   Allow list manually when adding/disabling AppJuice accounts.
-6. An AI Provider to configure after login. Complete its authorization or enter its
+4. Complete the login/authorization screen opened by your Agent when needed. The
+   Agent should use an already authorized Cloudflare connection or prepare the
+   official OAuth-capable CLI/MCP and explain the requested account/permissions.
+   You should not need to create API tokens, choose permission names, find IDs or
+   save credential files yourself. The Agent handles resource discovery and secure
+   credential storage. It asks only for required login, MFA and final consent.
+5. An AI Provider to configure after login. Complete its authorization or enter its
    key through the administrator UI. Never paste keys into the deployment prompt.
+
+The low-level token-file specification below is for the Agent or an operator with
+existing automation credentials. It is an advanced fallback. When using OAuth/MCP,
+the Agent prepares the Cloudflare resources through that authorized connection and
+writes the protected server configuration through the same deployment contract.
+Retained email-policy synchronization may use a separate restricted credential;
+setup access must not silently become permanent broad runtime access.
 
 Install `cloudflared` using Cloudflare's official Linux package instructions if it
 is absent. Ensure outbound Tunnel connectivity is permitted. You do not need home
@@ -72,6 +78,7 @@ method. Avoid command-line token values, shell tracing and public terminal logs.
 
 ```json
 {
+  "version": "REPLACE_WITH_THE_PLANNED_PUBLISHED_VERSION",
   "hostname": "juice.example.com",
   "adminEmail": "owner@example.com",
   "issuer": "https://your-team.cloudflareaccess.com",
@@ -94,7 +101,7 @@ python3 deploy.py plan --spec deployment.json
 
 `inspect` is read-only. It reports OS, CPU architecture, userland bits, libc,
 systemd, disk space, existing installation, connector and safe-extraction support.
-A 64-bit kernel with a 32-bit userland is unsupported. `plan` resolves a published
+A 64-bit kernel with a 32-bit userland is unsupported. Omit `version` for the first read-only plan, then record its resolved version in the specification. `plan` resolves a published
 server version and validates the specification before any changes.
 
 JSON statuses are `ready`, `needs-user-action`, `unsupported`, `conflict` or
@@ -175,3 +182,13 @@ material), deployment state, relevant systemd units and `/home/appjuice/.gitconf
 Maintain an off-device protected copy and retention policy. Inspect
 `journalctl -u appjuice-cloud` and root-only deployment `operations.log` locally;
 do not forward raw diagnostics or credentials into public reports.
+
+## Pre-release operator qualification
+
+Before publication, a designated test machine can install an exact trusted native
+archive using `install --archive FILE --sums SHA256SUMS --installer deploy-cloud-server.sh`.
+Record its expected version and full trusted `sourceCommit` in the specification.
+The tool still validates hashes, recursive inventory and embedded clean-source
+provenance. This explicit offline path neither publishes a release nor turns a
+pending public index into a supported release. Configure and verify use the
+recorded specification identity/version and do not require a public release.
