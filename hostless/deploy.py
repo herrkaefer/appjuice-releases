@@ -20,6 +20,9 @@ from audit import Audit
 
 OFFICIAL = 'https://github.com/herrkaefer/appjuice-releases/releases/download/'
 INDEX = 'https://raw.githubusercontent.com/herrkaefer/appjuice-releases/main/hostless/index.json'
+HUMAN_IDPS = {'onetimepin', 'azureAD', 'saml', 'centrify', 'facebook', 'github',
+    'google-apps', 'google', 'linkedin', 'oidc', 'duo', 'okta', 'onelogin',
+    'pingone', 'yandex', 'cloudflare', 'passkeys'}
 class Stop(Exception):
     def __init__(self, status, action):
         self.status, self.action = status, action
@@ -150,9 +153,9 @@ def configure(cf, spec, state, persist):
         stop('conflict', 'Access application/policy association changed.')
     if state.get('audience', app['aud']) != app['aud']: stop('conflict', 'Access application audience changed.')
     remember('audience', app['aud'])
-    providers = cf.api(account + '/access/identity_providers')
-    if not any(p.get('type') == 'onetimepin' for p in providers):
-        stop('needs-user-action', 'Enable One-time PIN or your selected human identity provider in Cloudflare Access, then resume.')
+    providers = listing(account + '/access/identity_providers')
+    if not any(p.get('type') in HUMAN_IDPS for p in providers):
+        stop('needs-user-action', 'Agent: prepare One-time PIN or the selected identity provider through authorized Cloudflare tools; request only required login/consent, then resume.')
     tunnels = listing(account + '/cfd_tunnel?is_deleted=false&name=' + name)
     tunnels = [t for t in tunnels if t['name'] == name]
     if len(tunnels) > 1: stop('conflict', 'Multiple deployment tunnels found.')

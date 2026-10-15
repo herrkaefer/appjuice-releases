@@ -56,8 +56,8 @@ setup access must not silently become permanent broad runtime access.
 
 Install `cloudflared` using Cloudflare's official Linux package instructions if it
 is absent. Ensure outbound Tunnel connectivity is permitted. You do not need home
-router port forwarding. The Agent should diagnose missing dependencies and explain
-specific user actions; it must preserve global sandbox restrictions and unrelated
+router port forwarding. The Agent should install missing runtime/inspection dependencies (including
+`iproute2` for `ss`) and explain specific user actions only when required; it must preserve global sandbox restrictions and unrelated
 Python/service configurations.
 
 ## Agent-managed Cloudflare authorization
@@ -164,7 +164,10 @@ serialized. Do not delete state merely to bypass a conflict.
 
 Configuration creates/reuses deployment-specific resources, protects the entire
 hostname through Access, configures the Tunnel route, and starts a dedicated
-connector. It stops for user action if a human login provider is missing. It
+connector. It accepts existing email OTP or supported SSO/password identity providers. If none
+is configured, the Agent prepares the login method with official CLI/API/browser
+tools and requests only the necessary consent. The default setup grant reads IdPs;
+creating one needs separate IdP-write authorization or an approved dashboard action. It
 refuses unrelated hostname/policy/Tunnel/service collisions. Existing operator
 installations need deliberate reviewed adoption rather than an overwrite.
 
