@@ -3,6 +3,7 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tarfile
@@ -16,6 +17,65 @@ spec.loader.exec_module(build)
 
 
 class PrivacyTests(unittest.TestCase):
+    def test_interruption_encryption_cleanup_and_unexpected_output_fail_closed(self):
+        for failure in ['interrupt', 'encryption', 'cleanup', 'unexpected-output']:
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                previous = Path.cwd()
+                real_remove, real_copy = shutil.rmtree, shutil.copyfile
+                output = io.StringIO()
+                encryptions = 0
+
+                def run(runner, phase, args, cwd=None, env=None):
+                    runner.phase = phase
+                    runner.log.write_text('PRIVATE_FAILURE_CANARY\n')
+                    if phase == 'native-build':
+                        if failure == 'interrupt':
+                            raise KeyboardInterrupt('PRIVATE_FAILURE_CANARY')
+                        source = Path(cwd)
+                        release = source / 'artifacts/linux-server-release'
+                        release.mkdir(parents=True)
+                        for name in ['AppJuice-Linux-x64.tar.gz', 'deploy-cloud-server.sh', 'install-linux.sh']:
+                            (release/name).write_text('audited fixture')
+                        (release/'SHA256SUMS').write_text(build.digest(release/'AppJuice-Linux-x64.tar.gz')+'  AppJuice-Linux-x64.tar.gz\n')
+                        (release/'hostless-release.json').write_text(json.dumps({'schemaVersion':1,'sourceCommit':'a'*40,'sourceDirty':False,'arch':'x64','platform':'linux','version':'0.1.0'}))
+                        for name in ['scripts/hostless/deploy.py', 'scripts/hostless/audit.py', 'docs/linux-server-deployment.md']:
+                            target = source/name
+                            target.parent.mkdir(parents=True,exist_ok=True)
+                            target.write_text('reviewed public fixture')
+
+                def encrypt(age, recipient, plaintext, target, runner):
+                    nonlocal encryptions
+                    encryptions += 1
+                    target.write_bytes(b'age-encryption.org/v1\nfixture')
+                    if failure == 'encryption' and encryptions == 2:
+                        raise RuntimeError('PRIVATE_FAILURE_CANARY')
+
+                def remove(target, *args, **kwargs):
+                    if failure == 'cleanup' and Path(target).name.startswith('appjuice-confidential-'):
+                        raise OSError('PRIVATE_FAILURE_CANARY')
+                    return real_remove(target,*args,**kwargs)
+
+                def copy(source, target, *args, **kwargs):
+                    result = real_copy(source,target,*args,**kwargs)
+                    if failure == 'unexpected-output' and Path(target).parent.name == 'release-output':
+                        (Path(target).parent/'source.ts').write_text('PRIVATE_FAILURE_CANARY')
+                    return result
+
+                try:
+                    os.chdir(root)
+                    environment = {'RUNNER_TEMP':str(root),'HOSTLESS_SOURCE_SHA':'a'*40,'HOSTLESS_ARCH':'x64','HOSTLESS_AGE_RECIPIENT':'age1'+'a'*58,'HOSTLESS_SOURCE_SSH_KEY':'fixture','HOSTLESS_RELEASE_CANDIDATE':'1'}
+                    with patch.dict(os.environ,environment), patch.object(build.platform,'system',return_value='Linux'), patch.object(build.platform,'machine',return_value='x86_64'), patch.object(build,'install_age',return_value=root/'age'), patch.object(build.PrivateRunner,'run',run), patch.object(build,'encrypt',encrypt), patch.object(build.shutil,'rmtree',remove), patch.object(build.shutil,'copyfile',copy), contextlib.redirect_stdout(output):
+                        self.assertEqual(build.main(),1)
+                    self.assertNotIn('PRIVATE_FAILURE_CANARY',output.getvalue())
+                    self.assertFalse((root/'release-output').exists())
+                    if failure == 'encryption':
+                        self.assertEqual(list((root/'encrypted-output').iterdir()),[])
+                    else:
+                        build.audit_public(root/'encrypted-output','x64')
+                finally:
+                    os.chdir(previous)
+
     def test_private_stdout_stderr_and_workflow_commands_are_not_forwarded(self):
         with tempfile.TemporaryDirectory() as temporary:
             runner = build.PrivateRunner(Path(temporary) / 'private')
